@@ -1,0 +1,141 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  phone        String     @unique
+  name         String
+  password     String
+  bloodGroup   BloodGroup
+  dateOfBirth  DateTime
+  city         String
+  isEligible   Boolean    @default(true)
+  lastDonation DateTime?
+  fcmToken     String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  donations     Donation[]
+  appointments  Appointment[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+model DonationCenter {
+  id        String     @id @default(cuid())
+  name      String
+  address   String
+  phone     String
+  hours     String
+  type      CenterType
+  latitude  Float
+  longitude Float
+  slots     Int        @default(10)
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+
+  appointments Appointment[]
+
+  @@map("donation_centers")
+}
+
+model Appointment {
+  id        String            @id @default(cuid())
+  userId    String
+  centerId  String
+  date      DateTime
+  timeSlot  String
+  type      DonationType
+  status    AppointmentStatus @default(PENDING)
+  createdAt DateTime          @default(now())
+
+  user   User           @relation(fields: [userId],   references: [id], onDelete: Cascade)
+  center DonationCenter @relation(fields: [centerId], references: [id])
+
+  @@map("appointments")
+}
+
+model Donation {
+  id         String       @id @default(cuid())
+  userId     String
+  centerName String
+  type       DonationType
+  donatedAt  DateTime     @default(now())
+  verified   Boolean      @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("donations")
+}
+
+model EmergencyRequest {
+  id         String     @id @default(cuid())
+  bloodGroup BloodGroup
+  hospital   String
+  city       String
+  units      Int
+  urgency    Urgency
+  postedBy   String
+  resolved   Boolean    @default(false)
+  createdAt  DateTime   @default(now())
+
+  @@map("emergency_requests")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+enum BloodGroup {
+  A_POS 
+  A_NEG
+  B_POS  
+  B_NEG
+  AB_POS 
+  AB_NEG
+  O_POS  
+  O_NEG
+}
+
+enum DonationType {
+  WHOLE_BLOOD
+  PLATELETS
+  PLASMA
+  DOUBLE_RED
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum CenterType {
+  BANK
+  HOSPITAL
+  NGO
+  CLINIC
+}
+
+enum Urgency {
+  CRITICAL
+  URGENT
+  NEEDED
+}
