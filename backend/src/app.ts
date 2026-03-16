@@ -5,6 +5,9 @@ import morgan from 'morgan'
 import { createServer } from 'http'
 import { Server } from 'socket.io'
 import dotenv from 'dotenv'
+import { authRouter } from './modules/auth/auth.router'
+import { errorMiddleware } from './middleware/error.middleware'
+
 
 dotenv.config()
 
@@ -27,6 +30,11 @@ app.get('/health', (req, res) => {
     message: 'LifeDrop API is running!'
   })
 })
+// Routes
+app.use('/api/auth', authRouter)
+
+// Global error handler
+app.use(errorMiddleware)
 
 // Start the server
 const PORT = process.env.PORT || 4000
