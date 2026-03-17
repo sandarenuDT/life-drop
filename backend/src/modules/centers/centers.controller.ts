@@ -79,3 +79,16 @@ export const getAvailableSlotsController = async (
     next(error)
   }
 }
+
+export const createCenterController = async (
+  req: Request,
+  res: Response,  
+  next: NextFunction
+) => {
+  try {
+    const center = await centersService.createCenter(req.body)
+    res.status(201).json(center)
+  } catch (error) {
+    next(error)
+  }
+}

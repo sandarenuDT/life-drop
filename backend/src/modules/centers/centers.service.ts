@@ -92,3 +92,18 @@ export const getAvailableSlots = async (
     timeSlots: allSlots,
   }
 }
+
+export const createCenter = async (data: {
+  name: string
+  address: string
+  phone: string
+  hours: string
+  type: 'HOSPITAL' | 'BANK' | 'NGO' |'CLINIC'
+  latitude: number
+  longitude: number
+  slots: number
+}) => {
+  return prisma.donationCenter.create({
+    data
+  })
+}

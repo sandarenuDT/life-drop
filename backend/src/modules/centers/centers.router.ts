@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { authenticate } from "../../middleware/auth.middleware";
-import { getAllCentersController, getNearestCentersController, getCenterByIdController, getAvailableSlotsController } from "./centers.controller";
+import { getAllCentersController, getNearestCentersController, getCenterByIdController, getAvailableSlotsController, createCenterController } from "./centers.controller";
+import { create } from "domain";
 
 
 
@@ -17,4 +18,5 @@ centersRouter.get('/:id', getCenterByIdController)
 // GET api/centers/:id/slots
 centersRouter.get('/:id/slots', getAvailableSlotsController)
 
-centersRouter.use(authenticate)
+// add center
+centersRouter.post('/', createCenterController)
