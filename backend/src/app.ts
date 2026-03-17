@@ -7,6 +7,7 @@ import { Server } from 'socket.io'
 import dotenv from 'dotenv'
 import { authRouter } from './modules/auth/auth.router'
 import { errorMiddleware } from './middleware/error.middleware'
+import { centersRouter } from './modules/centers/centers.router'
 
 
 dotenv.config()
@@ -32,6 +33,7 @@ app.get('/health', (req, res) => {
 })
 // Routes
 app.use('/api/auth', authRouter)
+app.use('/api/centers', centersRouter)
 
 // Global error handler
 app.use(errorMiddleware)
