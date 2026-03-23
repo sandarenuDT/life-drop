@@ -13,8 +13,9 @@ model User {
   phone        String     @unique
   name         String
   password     String
-  bloodGroup   BloodGroup
-  dateOfBirth  DateTime
+  role         Role       @default(DONOR)
+  bloodGroup   BloodGroup?
+  dateOfBirth  DateTime?
   city         String
   isEligible   Boolean    @default(true)
   lastDonation DateTime?
@@ -138,4 +139,10 @@ enum Urgency {
   CRITICAL
   URGENT
   NEEDED
+}
+enum Role {
+  DONOR
+  STAFF
+  ADMIN
+  EMERGENCY_REQUESTER
 }

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { authenticate } from "../../middleware/auth.middleware";
 import { getAllCentersController, getNearestCentersController, getCenterByIdController, getAvailableSlotsController, createCenterController } from "./centers.controller";
 import { create } from "domain";
+import { requireRole } from "../../middleware/role.middleware";
 
 
 
@@ -19,4 +20,4 @@ centersRouter.get('/:id', getCenterByIdController)
 centersRouter.get('/:id/slots', getAvailableSlotsController)
 
 // add center
-centersRouter.post('/', createCenterController)
+centersRouter.post('/', requireRole('ADMIN'), createCenterController)
