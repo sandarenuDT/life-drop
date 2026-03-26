@@ -1,14 +1,30 @@
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, Alert
+  StyleSheet, Alert, ActivityIndicator
 } from 'react-native'
 import { router } from 'expo-router'
+import { useQuery } from '@tanstack/react-query'
 import { COLORS } from '../../constants/color'
 import { useAuthStore } from '../../store/authStore'
+import { authService } from '../../services/auth.service'
+import { donationsService } from '../../services/donation.service'
 
 export default function ProfileScreen() {
-  const user = useAuthStore((s) => s.user)
   const clearAuth = useAuthStore((s) => s.clearAuth)
+
+  // Get real profile from backend
+  const { data: profile, isLoading: profileLoading } = useQuery({
+    queryKey: ['myProfile'],
+    queryFn: authService.getMe,
+  })
+
+  // Get real stats from backend
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ['donationStats'],
+    queryFn: donationsService.getDonationStats,
+  })
+
+  const isLoading = profileLoading || statsLoading
 
   const handleLogout = () => {
     Alert.alert(
@@ -28,6 +44,14 @@ export default function ProfileScreen() {
     )
   }
 
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator color={COLORS.primary} size="large" />
+      </View>
+    )
+  }
+
   return (
     <ScrollView style={styles.container}>
       {/* Header */}
@@ -35,26 +59,50 @@ export default function ProfileScreen() {
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>👤</Text>
         </View>
-        <Text style={styles.name}>{user?.name || 'Donor'}</Text>
-        <Text style={styles.email}>{user?.email || 'donor@email.com'}</Text>
-        <View style={styles.bloodBadge}>
-          <Text style={styles.bloodBadgeText}>
-            🩸 Blood Group: {user?.bloodGroup || 'O+'}
-          </Text>
-        </View>
+        <Text style={styles.name}>{profile?.name}</Text>
+        <Text style={styles.email}>{profile?.email}</Text>
+        {profile?.bloodGroup && (
+          <View style={styles.bloodBadge}>
+            <Text style={styles.bloodBadgeText}>
+              🩸 Blood Group: {profile.bloodGroup.replace('_', '')}
+            </Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.content}>
+        {/* Stats Row */}
+        <View style={styles.statsRow}>
+          <View style={styles.statBox}>
+            <Text style={styles.statValue}>
+              {stats?.totalDonations || 0}
+            </Text>
+            <Text style={styles.statLabel}>Donations</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statValue}>
+              {stats?.livesSaved || 0}
+            </Text>
+            <Text style={styles.statLabel}>Lives Saved</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statValue}>
+              {stats?.isEligible ? '✅' : '⏳'}
+            </Text>
+            <Text style={styles.statLabel}>Eligible</Text>
+          </View>
+        </View>
+
         {/* Account Details */}
         <Text style={styles.sectionTitle}>ACCOUNT DETAILS</Text>
         <View style={styles.detailsCard}>
           {[
-            { label: '👤 Full Name',      value: user?.name        || 'Not set' },
-            { label: '📧 Email',          value: user?.email       || 'Not set' },
-            { label: '🏙️ City',           value: user?.city        || 'Not set' },
-            { label: '🩸 Blood Group',    value: user?.bloodGroup  || 'Not set' },
-            { label: '📅 Last Donation',  value: 'Jan 15, 2026'                 },
-            { label: '✅ Eligible',       value: 'Yes'                          },
+            { label: '👤 Full Name', value: profile?.name        || 'Not set' },
+            { label: '📧 Email',     value: profile?.email       || 'Not set' },
+            { label: '📞 Phone',     value: profile?.phone       || 'Not set' },
+            { label: '🏙️ City',      value: profile?.city        || 'Not set' },
+            { label: '🩸 Blood',     value: profile?.bloodGroup?.replace('_', '') || 'Not set' },
+            { label: '✅ Eligible',  value: stats?.isEligible ? 'Yes' : 'Not yet' },
           ].map((item) => (
             <View key={item.label} style={styles.detailRow}>
               <Text style={styles.detailLabel}>{item.label}</Text>
@@ -63,42 +111,48 @@ export default function ProfileScreen() {
           ))}
         </View>
 
-        {/* Notifications */}
-        <Text style={styles.sectionTitle}>PREFERENCES</Text>
-        <View style={styles.prefCard}>
-          {[
-            { label: '🔔 Donation Reminders', value: 'On'  },
-            { label: '🚨 Emergency Alerts',   value: 'On'  },
-            { label: '📍 Location Sharing',   value: 'On'  },
-          ].map((item) => (
-            <View key={item.label} style={styles.prefRow}>
-              <Text style={styles.prefLabel}>{item.label}</Text>
-              <View style={styles.toggleOn}>
-                <Text style={styles.toggleText}>{item.value}</Text>
-              </View>
-            </View>
-          ))}
+        {/* Next Eligible */}
+        <Text style={styles.sectionTitle}>NEXT DONATION DATE</Text>
+        <View style={styles.nextCard}>
+          <Text style={styles.nextIcon}>📅</Text>
+          <View>
+            <Text style={styles.nextDate}>
+              {stats?.nextEligibleDate
+                ? new Date(stats.nextEligibleDate).toDateString()
+                : 'You can donate now!'}
+            </Text>
+            <Text style={styles.nextSub}>
+              {stats?.isEligible
+                ? '✅ You are eligible to donate today'
+                : '⏳ Waiting period not completed'}
+            </Text>
+          </View>
         </View>
 
-        {/* Achievements */}
-        <Text style={styles.sectionTitle}>ACHIEVEMENTS</Text>
-        <View style={styles.achievementsCard}>
-          {[
-            { badge: '🏅', title: 'First Donation',   desc: 'Donated for the first time'     },
-            { badge: '⭐', title: 'Regular Donor',    desc: 'Donated 3 times'                },
-            { badge: '🔥', title: 'On a Streak',      desc: '2 donations in a row'           },
-          ].map((item) => (
-            <View key={item.title} style={styles.achievementRow}>
-              <Text style={styles.achievementBadge}>{item.badge}</Text>
-              <View>
-                <Text style={styles.achievementTitle}>{item.title}</Text>
-                <Text style={styles.achievementDesc}>{item.desc}</Text>
-              </View>
-            </View>
-          ))}
+        {/* Role Badge */}
+        <Text style={styles.sectionTitle}>ACCOUNT TYPE</Text>
+        <View style={styles.roleCard}>
+          <Text style={styles.roleIcon}>
+            {profile?.role === 'ADMIN'               ? '👑'
+            : profile?.role === 'STAFF'               ? '🏥'
+            : profile?.role === 'EMERGENCY_REQUESTER' ? '🚨'
+            : '🩸'}
+          </Text>
+          <View>
+            <Text style={styles.roleTitle}>{profile?.role}</Text>
+            <Text style={styles.roleSub}>
+              {profile?.role === 'ADMIN'
+                ? 'Full system access'
+                : profile?.role === 'STAFF'
+                ? 'Manage donation center'
+                : profile?.role === 'EMERGENCY_REQUESTER'
+                ? 'Post emergency requests'
+                : 'Donate blood and save lives'}
+            </Text>
+          </View>
         </View>
 
-        {/* Logout Button */}
+        {/* Logout */}
         <TouchableOpacity
           style={styles.logoutButton}
           onPress={handleLogout}
@@ -113,6 +167,12 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface,
+  },
   container: {
     flex: 1,
     backgroundColor: COLORS.surface,
@@ -164,6 +224,28 @@ const styles = StyleSheet.create({
   content: {
     padding: 16,
   },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 20,
+  },
+  statBox: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 16,
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: COLORS.primary,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: COLORS.textMuted,
+    marginTop: 4,
+  },
   sectionTitle: {
     fontSize: 11,
     color: COLORS.textMuted,
@@ -195,59 +277,47 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.text,
   },
-  prefCard: {
+  nextCard: {
     backgroundColor: '#fff',
     borderRadius: 14,
-    padding: 4,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     marginBottom: 20,
   },
-  prefRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.surface,
+  nextIcon: {
+    fontSize: 28,
   },
-  prefLabel: {
-    fontSize: 13,
+  nextDate: {
+    fontSize: 15,
+    fontWeight: '700',
     color: COLORS.text,
   },
-  toggleOn: {
-    backgroundColor: '#e8fff5',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-  },
-  toggleText: {
-    color: COLORS.success,
+  nextSub: {
     fontSize: 12,
-    fontWeight: '700',
+    color: COLORS.textMuted,
+    marginTop: 2,
   },
-  achievementsCard: {
+  roleCard: {
     backgroundColor: '#fff',
     borderRadius: 14,
-    padding: 4,
-    marginBottom: 20,
-  },
-  achievementRow: {
+    padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.surface,
+    marginBottom: 20,
   },
-  achievementBadge: {
-    fontSize: 32,
+  roleIcon: {
+    fontSize: 36,
   },
-  achievementTitle: {
-    fontSize: 14,
-    fontWeight: '700',
+  roleTitle: {
+    fontSize: 15,
+    fontWeight: '800',
     color: COLORS.text,
-    marginBottom: 2,
+    marginBottom: 4,
   },
-  achievementDesc: {
+  roleSub: {
     fontSize: 12,
     color: COLORS.textMuted,
   },

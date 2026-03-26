@@ -1,50 +1,18 @@
 import {
-  View, Text, ScrollView,
-  TouchableOpacity, StyleSheet
+  View, Text, ScrollView, TouchableOpacity,
+  StyleSheet, ActivityIndicator
 } from 'react-native'
 import { router } from 'expo-router'
+import { useQuery } from '@tanstack/react-query'
 import { COLORS } from '../../constants/color'
-
-const centers = [
-  {
-    id: '1',
-    name: 'National Blood Centre',
-    address: 'Narahenpita, Colombo 05',
-    distance: '0.8 km',
-    slots: 5,
-    hours: '8AM - 4:30PM',
-    type: 'BANK',
-  },
-  {
-    id: '2',
-    name: 'Negombo General Hospital',
-    address: 'Colombo Rd, Negombo',
-    distance: '1.2 km',
-    slots: 3,
-    hours: '24/7',
-    type: 'HOSPITAL',
-  },
-  {
-    id: '3',
-    name: 'Red Cross Blood Bank',
-    address: 'Dharmapala Mawatha, Colombo 07',
-    distance: '2.5 km',
-    slots: 8,
-    hours: '8:30AM - 4PM',
-    type: 'NGO',
-  },
-  {
-    id: '4',
-    name: 'Lady Ridgeway Hospital',
-    address: 'Baseline Rd, Colombo 08',
-    distance: '3.1 km',
-    slots: 2,
-    hours: '8AM - 5PM',
-    type: 'HOSPITAL',
-  },
-]
+import { centersService } from '../../services/center.service'
 
 export default function MapScreen() {
+  const { data: centers, isLoading, isError } = useQuery({
+    queryKey: ['centers'],
+    queryFn: centersService.getAllCenters,
+  })
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -55,21 +23,36 @@ export default function MapScreen() {
         </Text>
       </View>
 
-      {/* Fake Map Placeholder */}
+      {/* Map Placeholder */}
       <View style={styles.mapPlaceholder}>
         <Text style={styles.mapText}>🗺️</Text>
         <Text style={styles.mapLabel}>
           Map loads here with Google Maps SDK
         </Text>
-        <Text style={styles.mapSub}>
-          (Requires Google Maps API key)
-        </Text>
       </View>
 
       {/* Centers List */}
       <ScrollView style={styles.list}>
-        <Text style={styles.sectionTitle}>NEARBY CENTERS</Text>
-        {centers.map((center) => (
+        <Text style={styles.sectionTitle}>
+          ALL CENTERS {centers ? `(${centers.length})` : ''}
+        </Text>
+
+        {isLoading && (
+          <ActivityIndicator
+            color={COLORS.primary}
+            style={{ marginTop: 20 }}
+          />
+        )}
+
+        {isError && (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorText}>
+              ⚠️ Could not load centers. Check your connection.
+            </Text>
+          </View>
+        )}
+
+        {centers?.map((center: any) => (
           <TouchableOpacity
             key={center.id}
             style={styles.centerCard}
@@ -85,9 +68,6 @@ export default function MapScreen() {
               </Text>
             </View>
             <View style={styles.centerRight}>
-              <Text style={styles.centerDistance}>
-                {center.distance}
-              </Text>
               <View style={styles.slotsTag}>
                 <Text style={styles.slotsText}>
                   ✅ {center.slots} slots
@@ -130,25 +110,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#e8f4f8',
     margin: 16,
     borderRadius: 16,
-    height: 150,
+    height: 130,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
     borderColor: '#cce0ea',
   },
   mapText: {
-    fontSize: 40,
-    marginBottom: 8,
+    fontSize: 36,
+    marginBottom: 6,
   },
   mapLabel: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#555',
-    fontWeight: '600',
-  },
-  mapSub: {
-    fontSize: 11,
-    color: '#999',
-    marginTop: 4,
   },
   list: {
     flex: 1,
@@ -161,6 +135,16 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     marginBottom: 10,
     marginTop: 4,
+  },
+  errorBox: {
+    backgroundColor: '#fff3f3',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 10,
+  },
+  errorText: {
+    color: COLORS.primary,
+    fontSize: 13,
   },
   centerCard: {
     backgroundColor: '#fff',
@@ -193,11 +177,6 @@ const styles = StyleSheet.create({
   centerRight: {
     alignItems: 'flex-end',
     gap: 4,
-  },
-  centerDistance: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: COLORS.primary,
   },
   slotsTag: {
     backgroundColor: '#e8fff5',

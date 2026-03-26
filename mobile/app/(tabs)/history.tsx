@@ -1,105 +1,125 @@
 import {
   View, Text, ScrollView,
-  StyleSheet
+  StyleSheet, ActivityIndicator
 } from 'react-native'
+import { useQuery } from '@tanstack/react-query'
 import { COLORS } from '../../constants/color'
-
-const donationHistory = [
-  {
-    id: '1',
-    date: 'Jan 15, 2026',
-    location: 'National Blood Centre',
-    type: 'Whole Blood',
-    badge: '🏅',
-    status: 'Completed',
-  },
-  {
-    id: '2',
-    date: 'Sep 20, 2025',
-    location: 'Red Cross Blood Bank',
-    type: 'Platelets',
-    badge: '⭐',
-    status: 'Completed',
-  },
-  {
-    id: '3',
-    date: 'May 05, 2025',
-    location: 'Negombo General Hospital',
-    type: 'Whole Blood',
-    badge: '🏅',
-    status: 'Completed',
-  },
-]
+import { donationsService } from '../../services/donation.service'
 
 export default function HistoryScreen() {
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ['donationStats'],
+    queryFn: donationsService.getDonationStats,
+  })
+
+  const { data: appointments, isLoading: appointmentsLoading } = useQuery({
+    queryKey: ['myAppointments'],
+    queryFn: donationsService.getMyAppointments,
+  })
+
+  const isLoading = statsLoading || appointmentsLoading
+
   return (
     <ScrollView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>📋 Donation History</Text>
-        <Text style={styles.headerSubtitle}>
-          Your impact so far
-        </Text>
+        <Text style={styles.headerSubtitle}>Your impact so far</Text>
       </View>
 
       <View style={styles.content}>
-        {/* Stats Row */}
-        <View style={styles.statsRow}>
-          <View style={styles.statBox}>
-            <Text style={styles.statValue}>3</Text>
-            <Text style={styles.statLabel}>Donations</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statValue}>9</Text>
-            <Text style={styles.statLabel}>Lives Saved</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statValue}>🔥 2</Text>
-            <Text style={styles.statLabel}>Streak</Text>
-          </View>
-        </View>
-
-        {/* History List */}
-        <Text style={styles.sectionTitle}>ALL DONATIONS</Text>
-        {donationHistory.map((item) => (
-          <View key={item.id} style={styles.historyCard}>
-            <Text style={styles.historyBadge}>{item.badge}</Text>
-            <View style={styles.historyInfo}>
-              <Text style={styles.historyLocation}>{item.location}</Text>
-              <Text style={styles.historyMeta}>
-                {item.type} · {item.date}
-              </Text>
+        {isLoading ? (
+          <ActivityIndicator
+            color={COLORS.primary}
+            style={{ marginTop: 40 }}
+          />
+        ) : (
+          <>
+            {/* Stats Row */}
+            <View style={styles.statsRow}>
+              <View style={styles.statBox}>
+                <Text style={styles.statValue}>
+                  {stats?.totalDonations || 0}
+                </Text>
+                <Text style={styles.statLabel}>Donations</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statValue}>
+                  {stats?.livesSaved || 0}
+                </Text>
+                <Text style={styles.statLabel}>Lives Saved</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statValue}>
+                  {stats?.isEligible ? '✅' : '⏳'}
+                </Text>
+                <Text style={styles.statLabel}>Eligible</Text>
+              </View>
             </View>
-            <View style={styles.statusTag}>
-              <Text style={styles.statusText}>{item.status}</Text>
+
+            {/* Appointments */}
+            <Text style={styles.sectionTitle}>MY APPOINTMENTS</Text>
+            {appointments?.length === 0 ? (
+              <View style={styles.emptyBox}>
+                <Text style={styles.emptyIcon}>📅</Text>
+                <Text style={styles.emptyText}>
+                  No appointments yet. Book your first donation!
+                </Text>
+              </View>
+            ) : (
+              appointments?.map((item: any) => (
+                <View key={item.id} style={styles.appointmentCard}>
+                  <View style={styles.appointmentLeft}>
+                    <Text style={styles.appointmentCenter}>
+                      {item.center.name}
+                    </Text>
+                    <Text style={styles.appointmentMeta}>
+                      📅 {new Date(item.date).toDateString()}
+                    </Text>
+                    <Text style={styles.appointmentMeta}>
+                      ⏰ {item.timeSlot}
+                    </Text>
+                    <Text style={styles.appointmentMeta}>
+                      🩸 {item.type.replace('_', ' ')}
+                    </Text>
+                  </View>
+                  <View style={[
+                    styles.statusTag,
+                    item.status === 'COMPLETED' && styles.statusCompleted,
+                    item.status === 'CANCELLED' && styles.statusCancelled,
+                    item.status === 'CONFIRMED' && styles.statusConfirmed,
+                  ]}>
+                    <Text style={[
+                      styles.statusText,
+                      item.status === 'CANCELLED' && { color: COLORS.error },
+                      item.status === 'CONFIRMED' && { color: '#0066cc' },
+                    ]}>
+                      {item.status}
+                    </Text>
+                  </View>
+                </View>
+              ))
+            )}
+
+            {/* Next Eligible */}
+            <Text style={styles.sectionTitle}>NEXT ELIGIBLE DATE</Text>
+            <View style={styles.nextCard}>
+              <Text style={styles.nextIcon}>📅</Text>
+              <View>
+                <Text style={styles.nextDate}>
+                  {stats?.nextEligibleDate
+                    ? new Date(stats.nextEligibleDate).toDateString()
+                    : 'You can donate now!'}
+                </Text>
+                <Text style={styles.nextSub}>
+                  {stats?.isEligible
+                    ? '✅ You are eligible to donate'
+                    : '⏳ Please wait for the required period'}
+                </Text>
+              </View>
             </View>
-          </View>
-        ))}
-
-        {/* Next Eligible */}
-        <Text style={styles.sectionTitle}>NEXT ELIGIBLE DATE</Text>
-        <View style={styles.nextCard}>
-          <Text style={styles.nextIcon}>📅</Text>
-          <View>
-            <Text style={styles.nextDate}>April 15, 2026</Text>
-            <Text style={styles.nextSub}>
-              Whole Blood · 56 day waiting period
-            </Text>
-          </View>
-        </View>
-
-        {/* Impact Card */}
-        <Text style={styles.sectionTitle}>YOUR IMPACT</Text>
-        <View style={styles.impactCard}>
-          <Text style={styles.impactEmoji}>❤️</Text>
-          <Text style={styles.impactTitle}>
-            You have saved up to 9 lives!
-          </Text>
-          <Text style={styles.impactSub}>
-            Each whole blood donation can save up to 3 lives.
-            Keep donating to make a bigger difference.
-          </Text>
-        </View>
+          </>
+        )}
 
         <View style={styles.bottomSpace} />
       </View>
@@ -162,36 +182,61 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     marginTop: 4,
   },
-  historyCard: {
+  emptyBox: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 32,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  emptyIcon: {
+    fontSize: 40,
+    marginBottom: 10,
+  },
+  emptyText: {
+    fontSize: 13,
+    color: COLORS.textMuted,
+    textAlign: 'center',
+  },
+  appointmentCard: {
     backgroundColor: '#fff',
     borderRadius: 14,
     padding: 14,
     marginBottom: 10,
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
   },
-  historyBadge: {
-    fontSize: 32,
-  },
-  historyInfo: {
+  appointmentLeft: {
     flex: 1,
+    marginRight: 10,
   },
-  historyLocation: {
+  appointmentCenter: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.text,
-    marginBottom: 4,
+    marginBottom: 6,
   },
-  historyMeta: {
+  appointmentMeta: {
     fontSize: 12,
     color: COLORS.textMuted,
+    marginBottom: 2,
   },
   statusTag: {
     backgroundColor: '#e8fff5',
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 4,
+    alignSelf: 'flex-start',
+  },
+  statusCompleted: {
+    backgroundColor: '#e8fff5',
+  },
+  statusCancelled: {
+    backgroundColor: '#fff0f0',
+  },
+  statusConfirmed: {
+    backgroundColor: '#e8f0ff',
   },
   statusText: {
     fontSize: 11,
@@ -219,31 +264,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.textMuted,
     marginTop: 2,
-  },
-  impactCard: {
-    backgroundColor: '#fff3f3',
-    borderRadius: 14,
-    padding: 20,
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: '#ffc0c0',
-  },
-  impactEmoji: {
-    fontSize: 40,
-    marginBottom: 10,
-  },
-  impactTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: COLORS.primary,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  impactSub: {
-    fontSize: 13,
-    color: COLORS.textMuted,
-    textAlign: 'center',
-    lineHeight: 20,
   },
   bottomSpace: {
     height: 20,

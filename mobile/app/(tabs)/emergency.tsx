@@ -1,47 +1,10 @@
 import {
-  View, Text, ScrollView,
-  TouchableOpacity, StyleSheet, Alert
+  View, Text, ScrollView, TouchableOpacity,
+  StyleSheet, Alert, ActivityIndicator
 } from 'react-native'
+import { useQuery } from '@tanstack/react-query'
 import { COLORS } from '../../constants/color'
-
-const emergencyRequests = [
-  {
-    id: '1',
-    bloodGroup: 'O-',
-    urgency: 'CRITICAL',
-    hospital: 'Negombo General Hospital',
-    units: 3,
-    postedAt: '5 min ago',
-    city: 'Negombo',
-  },
-  {
-    id: '2',
-    bloodGroup: 'AB+',
-    urgency: 'URGENT',
-    hospital: 'National Hospital Colombo',
-    units: 2,
-    postedAt: '22 min ago',
-    city: 'Colombo',
-  },
-  {
-    id: '3',
-    bloodGroup: 'B+',
-    urgency: 'NEEDED',
-    hospital: 'Lady Ridgeway Hospital',
-    units: 1,
-    postedAt: '1 hour ago',
-    city: 'Colombo',
-  },
-  {
-    id: '4',
-    bloodGroup: 'A-',
-    urgency: 'URGENT',
-    hospital: 'Kalubowila Teaching Hospital',
-    units: 4,
-    postedAt: '2 hours ago',
-    city: 'Dehiwala',
-  },
-]
+import { emergencyService } from '../../services/emergency.service'
 
 const urgencyColors = {
   CRITICAL: { bg: '#fff0f0', text: '#e63946', border: '#ffc0c0' },
@@ -50,6 +13,12 @@ const urgencyColors = {
 }
 
 export default function EmergencyScreen() {
+  const { data: requests, isLoading, refetch } = useQuery({
+    queryKey: ['emergencyRequests'],
+    queryFn: () => emergencyService.getEmergencyRequests(),
+    refetchInterval: 30000, // Refresh every 30 seconds
+  })
+
   const handleRespond = (bloodGroup: string, hospital: string) => {
     Alert.alert(
       'Respond to Request',
@@ -57,9 +26,12 @@ export default function EmergencyScreen() {
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Yes, I will donate',
+          text: 'Yes I will donate',
           onPress: () =>
-            Alert.alert('Thank You! 🩸', 'The hospital has been notified. Please arrive within 2 hours.'),
+            Alert.alert(
+              'Thank You! 🩸',
+              'The hospital has been notified. Please arrive within 2 hours.'
+            ),
         },
       ]
     )
@@ -76,62 +48,64 @@ export default function EmergencyScreen() {
       </View>
 
       <ScrollView style={styles.content}>
-        {/* Active Requests */}
-        <Text style={styles.sectionTitle}>ACTIVE REQUESTS</Text>
-        {emergencyRequests.map((req) => {
-          const colors = urgencyColors[req.urgency as keyof typeof urgencyColors]
+        <Text style={styles.sectionTitle}>
+          ACTIVE REQUESTS {requests ? `(${requests.length})` : ''}
+        </Text>
+
+        {isLoading && (
+          <ActivityIndicator
+            color={COLORS.primary}
+            style={{ marginTop: 20 }}
+          />
+        )}
+
+        {requests?.length === 0 && (
+          <View style={styles.emptyBox}>
+            <Text style={styles.emptyIcon}>✅</Text>
+            <Text style={styles.emptyText}>
+              No active emergency requests right now
+            </Text>
+          </View>
+        )}
+
+        {requests?.map((req: any) => {
+          const colors = urgencyColors[
+            req.urgency as keyof typeof urgencyColors
+          ]
           return (
             <View key={req.id} style={styles.requestCard}>
               <View style={styles.requestTop}>
-                {/* Blood Group + Urgency */}
                 <View>
-                  <View style={[styles.urgencyTag, { backgroundColor: colors.bg, borderColor: colors.border }]}>
+                  <View style={[
+                    styles.urgencyTag,
+                    { backgroundColor: colors.bg, borderColor: colors.border }
+                  ]}>
                     <Text style={[styles.urgencyText, { color: colors.text }]}>
                       {req.urgency}
                     </Text>
                   </View>
-                  <Text style={styles.bloodGroup}>{req.bloodGroup}</Text>
+                  <Text style={styles.bloodGroup}>
+                    {req.bloodGroup.replace('_', '')}
+                  </Text>
                 </View>
-
-                {/* Hospital Info */}
                 <View style={styles.hospitalInfo}>
                   <Text style={styles.hospitalName}>{req.hospital}</Text>
                   <Text style={styles.hospitalCity}>📍 {req.city}</Text>
-                  <Text style={styles.postedAt}>🕐 {req.postedAt}</Text>
+                  <Text style={styles.postedAt}>
+                    🕐 {new Date(req.createdAt).toLocaleTimeString()}
+                  </Text>
                   <Text style={styles.units}>{req.units} units needed</Text>
                 </View>
               </View>
-
-              {/* Respond Button */}
               <TouchableOpacity
                 style={styles.respondButton}
                 onPress={() => handleRespond(req.bloodGroup, req.hospital)}
               >
-                <Text style={styles.respondText}>
-                  Respond Now →
-                </Text>
+                <Text style={styles.respondText}>Respond Now →</Text>
               </TouchableOpacity>
             </View>
           )
         })}
-
-        {/* Post a Request */}
-        <Text style={styles.sectionTitle}>POST A REQUEST</Text>
-        <View style={styles.postCard}>
-          <Text style={styles.postText}>
-            Need blood urgently? Post a request and notify nearby donors instantly.
-          </Text>
-          <TouchableOpacity
-            style={styles.postButton}
-            onPress={() =>
-              Alert.alert('Coming Soon', 'Post emergency request feature coming in next update.')
-            }
-          >
-            <Text style={styles.postButtonText}>
-              + Post Emergency Request
-            </Text>
-          </TouchableOpacity>
-        </View>
 
         <View style={styles.bottomSpace} />
       </ScrollView>
@@ -173,15 +147,26 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     marginTop: 4,
   },
+  emptyBox: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 32,
+    alignItems: 'center',
+  },
+  emptyIcon: {
+    fontSize: 40,
+    marginBottom: 10,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: COLORS.textMuted,
+    textAlign: 'center',
+  },
   requestCard: {
     backgroundColor: '#fff',
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
   },
   requestTop: {
     flexDirection: 'row',
@@ -204,7 +189,6 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '800',
     color: COLORS.primary,
-    lineHeight: 36,
   },
   hospitalInfo: {
     flex: 1,
@@ -237,29 +221,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   respondText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  postCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-  },
-  postText: {
-    fontSize: 13,
-    color: COLORS.textMuted,
-    lineHeight: 20,
-    marginBottom: 14,
-  },
-  postButton: {
-    backgroundColor: COLORS.primaryDark,
-    borderRadius: 12,
-    padding: 14,
-    alignItems: 'center',
-  },
-  postButtonText: {
     color: '#fff',
     fontWeight: '700',
     fontSize: 14,

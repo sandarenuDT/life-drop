@@ -1,23 +1,23 @@
-import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { create } from 'zustand'
+import { persist, createJSONStorage } from 'zustand/middleware'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 interface User {
-  id: string;
-  name: string;
-  email: string;
-  bloodGroup: string;
-  city: string;
+  id: string
+  name: string
+  email: string
+  bloodGroup?: string
+  city: string
+  role: string
 }
 
 interface AuthState {
-  user: User | null;
-  accessToken: string | null;
-  refreshToken: string | null;
-  isLoggedIn: boolean;
-  setAuth: (user: User, accessToken: string, refreshToken: string) => void; //login
-  clearAuth: () => void;
-  //once logout clears authentication data from the store
+  user: User | null
+  accessToken: string | null
+  refreshToken: string | null
+  isLoggedIn: boolean
+  setAuth: (user: User, accessToken: string, refreshToken: string) => void
+  clearAuth: () => void
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -28,23 +28,13 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       isLoggedIn: false,
       setAuth: (user, accessToken, refreshToken) =>
-        set({
-          user,
-          accessToken,
-          refreshToken,
-          isLoggedIn: true,
-        }),
+        set({ user, accessToken, refreshToken, isLoggedIn: true }),
       clearAuth: () =>
-        set({
-          user: null,
-          accessToken: null,
-          refreshToken: null,
-          isLoggedIn: false,
-        }),
+        set({ user: null, accessToken: null, refreshToken: null, isLoggedIn: false }),
     }),
     {
-      name: "auth-storage",
+      name: 'auth-storage',
       storage: createJSONStorage(() => AsyncStorage),
-    },
-  ),
-);
+    }
+  )
+)
