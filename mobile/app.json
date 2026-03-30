@@ -9,7 +9,14 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "com.yourname.lifedrop",
+      "config": {
+        "googleMapsApiKey": "AIzaSyAMkUWlVdpudTIWPrm_8-mUM2SZtWHuYY0"
+      },
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "LifeDrop needs your location to find the nearest donation centers."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +26,18 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.yourname.lifedrop",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "NOTIFICATIONS"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyAMkUWlVdpudTIWPrm_8-mUM2SZtWHuYY0"
+        }
+      }
     },
     "web": {
       "output": "static",
