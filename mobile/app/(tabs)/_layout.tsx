@@ -1,27 +1,4 @@
-// import { Tabs } from 'expo-router'
-// import { COLORS } from '../../constants/color'
 
-// export default function TabsLayout() {
-//   return (
-//     <Tabs
-//       screenOptions={{
-//         headerShown: false,
-//         tabBarActiveTintColor: COLORS.primary,
-//         tabBarInactiveTintColor: COLORS.textMuted,
-//         tabBarStyle: {
-//           backgroundColor: '#ffffff',
-//           borderTopColor: COLORS.border,
-//         },
-//       }}
-//     >
-//       <Tabs.Screen name="index"     options={{ tabBarLabel: 'Home'    }} />
-//       <Tabs.Screen name="map"       options={{ tabBarLabel: 'Find'    }} />
-//       <Tabs.Screen name="emergency" options={{ tabBarLabel: 'SOS'     }} />
-//       <Tabs.Screen name="history"   options={{ tabBarLabel: 'History' }} />
-//       <Tabs.Screen name="profile"   options={{ tabBarLabel: 'Profile' }} />
-//     </Tabs>
-//   )
-// }
 import { Tabs } from 'expo-router'
 import { COLORS } from '../../constants/color'
 import { useAuthStore } from '../../store/authStore'
@@ -60,7 +37,7 @@ export default function TabsLayout() {
             <TabIcon icon="📍" color={color} />
           ),
           // Hide map for admin
-          tabBarItemStyle: role === 'ADMIN'
+          tabBarItemStyle: role === 'ADMIN' || role === 'EMERGENCY_RESPONDER'
             ? { display: 'none' }
             : {}
         }}
@@ -87,6 +64,20 @@ export default function TabsLayout() {
             : {}
         }}
       />
+      {/* //fro admin panel */}
+      <Tabs.Screen
+        name="admin"
+        options={{
+          tabBarLabel: 'Admin',
+          tabBarIcon: ({ color }) => (
+            <TabIcon icon="👑" color={color} />
+          ),
+          tabBarItemStyle: role !== 'ADMIN'
+            ? { display: 'none' }
+            : {},
+        }}
+      />
+
       <Tabs.Screen
         name="profile"
         options={{
