@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authenticate } from "../../middleware/auth.middleware";
-import { getAllCentersController, getNearestCentersController, getCenterByIdController, getAvailableSlotsController, createCenterController } from "./centers.controller";
+import { getAllCentersController, getNearestCentersController, getCenterByIdController, getAvailableSlotsController, createCenterController, updateCenterController, deleteCenterController } from "./centers.controller";
 import { create } from "domain";
 import { requireRole } from "../../middleware/role.middleware";
 
@@ -21,3 +21,16 @@ centersRouter.get('/:id/slots', getAvailableSlotsController)
 
 // add center
 centersRouter.post('/', requireRole('ADMIN'), createCenterController)
+// PUT /api/centers/:id — ADMIN only
+centersRouter.put(
+  '/:id',
+  requireRole('ADMIN'),
+  updateCenterController
+)
+
+// DELETE /api/centers/:id — ADMIN only
+centersRouter.delete(
+  '/:id',
+  requireRole('ADMIN'),
+  deleteCenterController
+)

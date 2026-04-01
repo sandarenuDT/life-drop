@@ -11,13 +11,23 @@ export const api = axios.create({
 });
 
 // Add a request interceptor to include the access token in headers
+// api.interceptors.request.use((config) => {
+//   const token = useAuthStore.getState().accessToken;
+//   if (token) {
+//     config.headers["Authorization"] = `Bearer ${token}`;
+//   }
+//   return config;
+// });
+
 api.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().accessToken;
+  const token = useAuthStore.getState().accessToken
+  console.log('🔑 API Request:', config.method?.toUpperCase(), config.url)
+  console.log('🔑 Token exists:', !!token)
   if (token) {
-    config.headers["Authorization"] = `Bearer ${token}`;
+    config.headers.Authorization = `Bearer ${token}`
   }
-  return config;
-});
+  return config
+})
 
 api.interceptors.response.use(
   (Response) => Response,
@@ -28,3 +38,4 @@ api.interceptors.response.use(
     return Promise.reject(error);
   },
 );
+

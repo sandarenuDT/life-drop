@@ -18,16 +18,16 @@ const CENTER_TYPES = ['BANK', 'HOSPITAL', 'NGO', 'CLINIC']
 
 
 const CENTER_TYPE_ICONS: Record<string, string> = {
-  BANK:     '🏦',
+  BANK: '🏦',
   HOSPITAL: '🏥',
-  NGO:      '❤️',
-  CLINIC:   '🩺',
+  NGO: '❤️',
+  CLINIC: '🩺',
 }
 
 const ROLE_COLORS: Record<string, string> = {
-  ADMIN:               '#e63946',
-  DONOR:               '#06d6a0',
-  STAFF:               '#00d4ff',
+  ADMIN: '#e63946',
+  DONOR: '#06d6a0',
+  STAFF: '#00d4ff',
   EMERGENCY_REQUESTER: '#ffd166',
 }
 
@@ -86,17 +86,16 @@ function AddCenterModal({
 }) {
   const queryClient = useQueryClient()
 
-  const [name,      setName]      = useState('')
-  const [address,   setAddress]   = useState('')
-  const [phone,     setPhone]     = useState('')
-  const [hours,     setHours]     = useState('')
-  const [type,      setType]      = useState<'HOSPITAL' | 'BANK' | 'NGO' | 'CLINIC'>('HOSPITAL')
-  const [latitude,  setLatitude]  = useState('')
+  const [name, setName] = useState('')
+  const [address, setAddress] = useState('')
+  const [phone, setPhone] = useState('')
+  const [hours, setHours] = useState('')
+  const [type, setType] = useState<'HOSPITAL' | 'BANK' | 'NGO' | 'CLINIC'>('HOSPITAL')
+  const [latitude, setLatitude] = useState('')
   const [longitude, setLongitude] = useState('')
-  const [slots,     setSlots]     = useState('10')
-  const [errors,    setErrors]    = useState<Record<string, string>>({})
-  const [touched,   setTouched]   = useState<Record<string, boolean>>({})
-
+  const [slots, setSlots] = useState('10')
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [touched, setTouched] = useState<Record<string, boolean>>({})
   const handleBlur = (field: string) => {
     setTouched(prev => ({ ...prev, [field]: true }))
     setErrors(validateCenter({
@@ -114,7 +113,7 @@ function AddCenterModal({
   const { mutate: addCenter, isPending } = useMutation({
     mutationFn: adminService.addCenter,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['centers']    })
+      queryClient.invalidateQueries({ queryKey: ['centers'] })
       queryClient.invalidateQueries({ queryKey: ['adminStats'] })
       Alert.alert('✅ Success', 'Donation center added successfully!')
       resetForm()
@@ -125,7 +124,9 @@ function AddCenterModal({
         'Failed to Add Center',
         error.response?.data?.message || 'Something went wrong. Please try again.'
       )
+
     }
+
   })
 
   const handleSubmit = () => {
@@ -144,9 +145,9 @@ function AddCenterModal({
       phone,
       hours,
       type,
-      latitude:  parseFloat(latitude),
+      latitude: parseFloat(latitude),
       longitude: parseFloat(longitude),
-      slots:     parseInt(slots),
+      slots: parseInt(slots),
     })
   }
 
@@ -172,8 +173,8 @@ function AddCenterModal({
             <TextInput
               style={[
                 adminStyles.input,
-                touched.name && errors.name   && adminStyles.inputError,
-                touched.name && !errors.name  && adminStyles.inputSuccess,
+                touched.name && errors.name && adminStyles.inputError,
+                touched.name && !errors.name && adminStyles.inputSuccess,
               ]}
               placeholder="e.g. National Blood Centre"
               value={name}
@@ -190,8 +191,8 @@ function AddCenterModal({
             <TextInput
               style={[
                 adminStyles.input,
-                touched.address && errors.address   && adminStyles.inputError,
-                touched.address && !errors.address  && adminStyles.inputSuccess,
+                touched.address && errors.address && adminStyles.inputError,
+                touched.address && !errors.address && adminStyles.inputSuccess,
               ]}
               placeholder="e.g. Narahenpita, Colombo 05"
               value={address}
@@ -208,8 +209,8 @@ function AddCenterModal({
             <TextInput
               style={[
                 adminStyles.input,
-                touched.phone && errors.phone   && adminStyles.inputError,
-                touched.phone && !errors.phone  && adminStyles.inputSuccess,
+                touched.phone && errors.phone && adminStyles.inputError,
+                touched.phone && !errors.phone && adminStyles.inputSuccess,
               ]}
               placeholder="e.g. +94-11-269-4600"
               value={phone}
@@ -227,8 +228,8 @@ function AddCenterModal({
             <TextInput
               style={[
                 adminStyles.input,
-                touched.hours && errors.hours   && adminStyles.inputError,
-                touched.hours && !errors.hours  && adminStyles.inputSuccess,
+                touched.hours && errors.hours && adminStyles.inputError,
+                touched.hours && !errors.hours && adminStyles.inputSuccess,
               ]}
               placeholder="e.g. 8:00 AM - 4:30 PM"
               value={hours}
@@ -270,8 +271,8 @@ function AddCenterModal({
             <TextInput
               style={[
                 adminStyles.input,
-                touched.latitude && errors.latitude   && adminStyles.inputError,
-                touched.latitude && !errors.latitude  && adminStyles.inputSuccess,
+                touched.latitude && errors.latitude && adminStyles.inputError,
+                touched.latitude && !errors.latitude && adminStyles.inputSuccess,
               ]}
               placeholder="e.g. 6.9271"
               value={latitude}
@@ -286,8 +287,8 @@ function AddCenterModal({
             <TextInput
               style={[
                 adminStyles.input,
-                touched.longitude && errors.longitude   && adminStyles.inputError,
-                touched.longitude && !errors.longitude  && adminStyles.inputSuccess,
+                touched.longitude && errors.longitude && adminStyles.inputError,
+                touched.longitude && !errors.longitude && adminStyles.inputSuccess,
               ]}
               placeholder="e.g. 79.8612"
               value={longitude}
@@ -313,8 +314,8 @@ function AddCenterModal({
             <TextInput
               style={[
                 adminStyles.input,
-                touched.slots && errors.slots   && adminStyles.inputError,
-                touched.slots && !errors.slots  && adminStyles.inputSuccess,
+                touched.slots && errors.slots && adminStyles.inputError,
+                touched.slots && !errors.slots && adminStyles.inputSuccess,
               ]}
               placeholder="e.g. 10"
               value={slots}
@@ -357,23 +358,24 @@ export default function AdminScreen() {
     queryKey: ['adminStats'],
     queryFn: adminService.getStats,
     refetchOnWindowFocus: true,
-  staleTime: 0,
+    staleTime: 0,
   })
+  console.log('Admin Statsdeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeygu:', adminStats)
 
   // All Centers
   const { data: centers, isLoading: centersLoading } = useQuery({
     queryKey: ['centers'],
     queryFn: centersService.getAllCenters,
-      staleTime: 0,
+    staleTime: 0,
 
   })
 
   // All Users
   const { data: users, isLoading: usersLoading } = useQuery({
     queryKey: ['allUsers'],
-    queryFn: adminService.getAllUSers,
+    queryFn: adminService.getAllUsers,
     enabled: activeTab === 'users',
-      staleTime: 0,
+    staleTime: 0,
 
   })
 
@@ -381,8 +383,10 @@ export default function AdminScreen() {
   const { mutate: deleteCenter } = useMutation({
     mutationFn: adminService.deleteCenter,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['centers']    })
+      queryClient.invalidateQueries({ queryKey: ['centers'] })
       queryClient.invalidateQueries({ queryKey: ['adminStats'] })
+      // console.log('sdvvvvvvvvvvvvvvvvvvvvvvvvvvvvv',adminStats?.totalUsers)
+
       Alert.alert('✅ Done', 'Center deleted successfully')
     },
     onError: (error: any) => {
@@ -397,7 +401,7 @@ export default function AdminScreen() {
   const { mutate: deleteUser } = useMutation({
     mutationFn: adminService.deleteUser,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['allUsers']   })
+      queryClient.invalidateQueries({ queryKey: ['allUsers'] })
       queryClient.invalidateQueries({ queryKey: ['adminStats'] })
       Alert.alert('✅ Done', 'User deleted successfully')
     },
@@ -444,32 +448,32 @@ export default function AdminScreen() {
 
       {/* Header */}
       {/* Header */}
-<View style={header.container}>
-  <View style={{
-    flexDirection:  'row',
-    justifyContent: 'space-between',
-    alignItems:     'center',
-  }}>
-    <View>
-      <Text style={header.title}>👑 Admin Panel</Text>
-      <Text style={header.subtitle}>Manage your LifeDrop system</Text>
-    </View>
-    <TouchableOpacity
-      onPress={() => {
-        queryClient.invalidateQueries({ queryKey: ['adminStats'] })
-        queryClient.invalidateQueries({ queryKey: ['centers']    })
-        queryClient.invalidateQueries({ queryKey: ['allUsers']   })
-      }}
-      style={{
-        backgroundColor: 'rgba(255,255,255,0.2)',
-        borderRadius:    10,
-        padding:         10,
-      }}
-    >
-      <Text style={{ fontSize: 20 }}>🔄</Text>
-    </TouchableOpacity>
-  </View>
-</View>
+      <View style={header.container}>
+        <View style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}>
+          <View>
+            <Text style={header.title}>👑 Admin Panel</Text>
+            <Text style={header.subtitle}>Manage your LifeDrop system</Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => {
+              queryClient.invalidateQueries({ queryKey: ['adminStats'] })
+              queryClient.invalidateQueries({ queryKey: ['centers'] })
+              queryClient.invalidateQueries({ queryKey: ['allUsers'] })
+            }}
+            style={{
+              backgroundColor: 'rgba(255,255,255,0.2)',
+              borderRadius: 10,
+              padding: 10,
+            }}
+          >
+            <Text style={{ fontSize: 20 }}>🔄</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
 
       <ScrollView style={layout.content}>
 
@@ -479,9 +483,9 @@ export default function AdminScreen() {
         ) : (
           <View style={stats.row}>
             {[
-              { icon: '👥', label: 'Users',      value: adminStats?.totalUsers        || 0 },
-              { icon: '🩸', label: 'Donors',     value: adminStats?.totalDonors       || 0 },
-              { icon: '🏥', label: 'Centers',    value: adminStats?.totalCenters      || 0 },
+              { icon: '👥', label: 'Users', value: adminStats?.totalUsers || 0 },
+              { icon: '🩸', label: 'Donors', value: adminStats?.totalDonors || 0 },
+              { icon: '🏥', label: 'Centers', value: adminStats?.totalCenters || 0 },
               { icon: '🚨', label: 'Active SOS', value: adminStats?.activeEmergencies || 0 },
             ].map((s) => (
               <View key={s.label} style={stats.box}>
@@ -634,10 +638,10 @@ export default function AdminScreen() {
                     { backgroundColor: `${ROLE_COLORS[user.role] || '#888'}22` }
                   ]}>
                     <Text style={adminStyles.roleAvatarIcon}>
-                      {user.role === 'ADMIN'               ? '👑'
-                      : user.role === 'STAFF'              ? '🏥'
-                      : user.role === 'EMERGENCY_REQUESTER' ? '🚨'
-                      : '🩸'}
+                      {user.role === 'ADMIN' ? '👑'
+                        : user.role === 'STAFF' ? '🏥'
+                          : user.role === 'EMERGENCY_REQUESTER' ? '🚨'
+                            : '🩸'}
                     </Text>
                   </View>
                   <View style={{ flex: 1 }}>

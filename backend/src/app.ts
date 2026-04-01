@@ -10,7 +10,7 @@ import { errorMiddleware } from './middleware/error.middleware'
 import { centersRouter } from './modules/centers/centers.router'
 import { donationsRouter } from './modules/donations/donations.router'
 import { emergencyRouter } from './modules/emergency/emergency.router'
-
+import { usersRouter } from './modules/users/users.router'
 
 dotenv.config()
 
@@ -38,6 +38,7 @@ app.use('/api/auth', authRouter)
 app.use('/api/centers', centersRouter)
 app.use('/api/donations', donationsRouter)
 app.use('/api/emergency', emergencyRouter)
+app.use('/api/users', usersRouter)
 // Global error handler
 app.use(errorMiddleware)
 
