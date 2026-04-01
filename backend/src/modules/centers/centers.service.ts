@@ -93,17 +93,39 @@ export const getAvailableSlots = async (
   }
 }
 
+// Create a new center
 export const createCenter = async (data: {
-  name: string
-  address: string
-  phone: string
-  hours: string
-  type: 'HOSPITAL' | 'BANK' | 'NGO' |'CLINIC'
-  latitude: number
+  name:      string
+  address:   string
+  phone:     string
+  hours:     string
+  type:      string
+  latitude:  number
   longitude: number
-  slots: number
+  slots:     number
 }) => {
-  return prisma.donationCenter.create({
-    data
-  })
+  return prisma.donationCenter.create({ data: data as any })
+}
+
+// Update a center
+export const updateCenter = async (id: string, data: {
+  name?:      string
+  address?:   string
+  phone?:     string
+  hours?:     string
+  type?:      string
+  slots?:     number
+  isActive?:  boolean
+}) => {
+  const center = await prisma.donationCenter.findUnique({ where: { id } })
+  if (!center) throw new AppError('Center not found', 404)
+  return prisma.donationCenter.update({ where: { id }, data: data as any })
+}
+
+// Delete a center
+export const deleteCenter = async (id: string) => {
+  const center = await prisma.donationCenter.findUnique({ where: { id } })
+  if (!center) throw new AppError('Center not found', 404)
+  await prisma.donationCenter.delete({ where: { id } })
+  return { message: 'Center deleted successfully' }
 }

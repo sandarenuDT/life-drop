@@ -1,17 +1,88 @@
 import {
-  View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, ActivityIndicator
+  View, Text, StyleSheet, TouchableOpacity,
+  ScrollView, ActivityIndicator, Dimensions
 } from 'react-native'
-import { router } from 'expo-router'
+import MapView, { Marker, Callout, PROVIDER_GOOGLE } from 'react-native-maps'
+import * as Location from 'expo-location'
+import { useState, useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { router } from 'expo-router'
 import { COLORS } from '../../constants/color'
 import { centersService } from '../../services/center.service'
 
+const { width } = Dimensions.get('window')
+
+const CENTER_TYPE_ICONS: Record<string, string> = {
+  BANK:     '🏦',
+  HOSPITAL: '🏥',
+  NGO:      '❤️',
+  CLINIC:   '🩺',
+}
+
 export default function MapScreen() {
-  const { data: centers, isLoading, isError } = useQuery({
+  const mapRef = useRef<MapView>(null)
+
+  const [userLocation, setUserLocation] = useState<{
+    latitude: number
+    longitude: number
+  } | null>(null)
+
+  const [locationError, setLocationError] = useState('')
+  const [selectedCenter, setSelectedCenter] = useState<any>(null)
+
+  // Get user location
+  useEffect(() => {
+    ;(async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync()
+      if (status !== 'granted') {
+        setLocationError(
+          'Location permission denied. Showing default location.'
+        )
+        // Default to Colombo if no permission
+        setUserLocation({ latitude: 6.9271, longitude: 79.8612 })
+        return
+      }
+
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      })
+
+      setUserLocation({
+        latitude:  location.coords.latitude,
+        longitude: location.coords.longitude,
+      })
+    })()
+  }, [])
+
+  // Get centers from backend
+  const { data: centers, isLoading } = useQuery({
     queryKey: ['centers'],
     queryFn: centersService.getAllCenters,
   })
+
+  // Move map to user location
+  const goToMyLocation = () => {
+    if (userLocation && mapRef.current) {
+      mapRef.current.animateToRegion({
+        ...userLocation,
+        latitudeDelta:  0.05,
+        longitudeDelta: 0.05,
+      }, 1000)
+    }
+  }
+
+  // Move map to a center
+  const focusCenter = (center: any) => {
+    setSelectedCenter(center)
+    if (mapRef.current) {
+      mapRef.current.animateToRegion({
+        latitude:       center.latitude,
+        longitude:      center.longitude,
+        latitudeDelta:  0.01,
+        longitudeDelta: 0.01,
+      }, 800)
+    }
+  }
 
   return (
     <View style={styles.container}>
@@ -19,66 +90,158 @@ export default function MapScreen() {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>📍 Find Centers</Text>
         <Text style={styles.headerSubtitle}>
-          Donation centers near you
+          {centers
+            ? `${centers.length} centers near you`
+            : 'Loading centers...'}
         </Text>
       </View>
 
-      {/* Map Placeholder */}
-      <View style={styles.mapPlaceholder}>
-        <Text style={styles.mapText}>🗺️</Text>
-        <Text style={styles.mapLabel}>
-          Map loads here with Google Maps SDK
-        </Text>
-      </View>
+      {/* Location error warning */}
+      {locationError ? (
+        <View style={styles.locationWarning}>
+          <Text style={styles.locationWarningText}>⚠️ {locationError}</Text>
+        </View>
+      ) : null}
 
-      {/* Centers List */}
-      <ScrollView style={styles.list}>
+      {/* Map */}
+      {userLocation ? (
+        <View style={styles.mapContainer}>
+          <MapView
+            ref={mapRef}
+            provider={PROVIDER_GOOGLE}
+            style={styles.map}
+            initialRegion={{
+              latitude:       userLocation.latitude,
+              longitude:      userLocation.longitude,
+              latitudeDelta:  0.08,
+              longitudeDelta: 0.08,
+            }}
+            showsUserLocation
+            showsMyLocationButton={false}
+            showsCompass
+            showsScale
+          >
+            {/* Center Markers */}
+            {centers?.map((center: any) => (
+              <Marker
+                key={center.id}
+                coordinate={{
+                  latitude:  center.latitude,
+                  longitude: center.longitude,
+                }}
+                onPress={() => focusCenter(center)}
+              >
+                {/* Custom marker */}
+                <View style={[
+                  styles.marker,
+                  selectedCenter?.id === center.id && styles.markerSelected
+                ]}>
+                  <Text style={styles.markerIcon}>
+                    {CENTER_TYPE_ICONS[center.type] || '🏥'}
+                  </Text>
+                </View>
+
+                {/* Callout popup on marker tap */}
+                <Callout
+                  tooltip
+                  onPress={() => router.push(`/center/${center.id}` as any)}
+                >
+                  <View style={styles.callout}>
+                    <Text style={styles.calloutTitle}>{center.name}</Text>
+                    <Text style={styles.calloutAddress}>
+                      📍 {center.address}
+                    </Text>
+                    <Text style={styles.calloutHours}>
+                      ⏰ {center.hours}
+                    </Text>
+                    <Text style={styles.calloutSlots}>
+                      ✅ {center.slots} slots available
+                    </Text>
+                    <View style={styles.calloutButton}>
+                      <Text style={styles.calloutButtonText}>
+                        Tap to Book →
+                      </Text>
+                    </View>
+                  </View>
+                </Callout>
+              </Marker>
+            ))}
+          </MapView>
+
+          {/* My Location Button */}
+          <TouchableOpacity
+            style={styles.myLocationBtn}
+            onPress={goToMyLocation}
+          >
+            <Text style={styles.myLocationIcon}>🎯</Text>
+          </TouchableOpacity>
+
+          {/* Loading overlay */}
+          {isLoading && (
+            <View style={styles.mapLoading}>
+              <ActivityIndicator color={COLORS.primary} />
+              <Text style={styles.mapLoadingText}>
+                Loading centers...
+              </Text>
+            </View>
+          )}
+        </View>
+      ) : (
+        <View style={styles.mapLoading}>
+          <ActivityIndicator color={COLORS.primary} size="large" />
+          <Text style={styles.mapLoadingText}>
+            Getting your location...
+          </Text>
+        </View>
+      )}
+
+      {/* Centers List below map */}
+      <ScrollView
+        style={styles.list}
+        horizontal={false}
+      >
         <Text style={styles.sectionTitle}>
           ALL CENTERS {centers ? `(${centers.length})` : ''}
         </Text>
 
-        {isLoading && (
-          <ActivityIndicator
-            color={COLORS.primary}
-            style={{ marginTop: 20 }}
-          />
-        )}
-
-        {isError && (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorText}>
-              ⚠️ Could not load centers. Check your connection.
-            </Text>
-          </View>
-        )}
-
         {centers?.map((center: any) => (
           <TouchableOpacity
             key={center.id}
-            style={styles.centerCard}
-            onPress={() => router.push(`/center/${center.id}` as any)}
+            style={[
+              styles.centerCard,
+              selectedCenter?.id === center.id && styles.centerCardSelected
+            ]}
+            onPress={() => focusCenter(center)}
           >
             <View style={styles.centerLeft}>
-              <Text style={styles.centerName}>{center.name}</Text>
-              <Text style={styles.centerAddress}>
-                📍 {center.address}
-              </Text>
-              <Text style={styles.centerHours}>
-                ⏰ {center.hours}
-              </Text>
+              <View style={styles.centerNameRow}>
+                <Text style={styles.centerIcon}>
+                  {CENTER_TYPE_ICONS[center.type] || '🏥'}
+                </Text>
+                <Text style={styles.centerName}>{center.name}</Text>
+              </View>
+              <Text style={styles.centerAddress}>📍 {center.address}</Text>
+              <Text style={styles.centerHours}>⏰ {center.hours}</Text>
             </View>
             <View style={styles.centerRight}>
               <View style={styles.slotsTag}>
                 <Text style={styles.slotsText}>
-                  ✅ {center.slots} slots
+                  ✅ {center.slots}
                 </Text>
               </View>
-              <View style={styles.typeTag}>
-                <Text style={styles.typeText}>{center.type}</Text>
-              </View>
+              <TouchableOpacity
+                style={styles.bookBtn}
+                onPress={() =>
+                  router.push(`/center/${center.id}` as any)
+                }
+              >
+                <Text style={styles.bookBtnText}>Book</Text>
+              </TouchableOpacity>
             </View>
           </TouchableOpacity>
         ))}
+
+        <View style={{ height: 20 }} />
       </ScrollView>
     </View>
   )
@@ -106,24 +269,128 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.7)',
     fontSize: 13,
   },
-  mapPlaceholder: {
-    backgroundColor: '#e8f4f8',
+  locationWarning: {
+    backgroundColor: '#fff8e1',
+    padding: 10,
+    marginHorizontal: 16,
+    marginTop: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ffe082',
+  },
+  locationWarningText: {
+    fontSize: 12,
+    color: '#856404',
+  },
+  mapContainer: {
+    height: 280,
     margin: 16,
     borderRadius: 16,
-    height: 130,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  map: {
+    width: '100%',
+    height: '100%',
+  },
+  mapLoading: {
+    height: 280,
+    margin: 16,
+    borderRadius: 16,
+    backgroundColor: '#e8f4f8',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: '#cce0ea',
+    gap: 10,
   },
-  mapText: {
-    fontSize: 36,
+  mapLoadingText: {
+    color: COLORS.textMuted,
+    fontSize: 13,
+  },
+
+  // Custom marker
+  marker: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 6,
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  markerSelected: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primaryDark,
+    transform: [{ scale: 1.2 }],
+  },
+  markerIcon: {
+    fontSize: 20,
+  },
+
+  // Callout
+  callout: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 14,
+    width: 220,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  calloutTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: COLORS.text,
     marginBottom: 6,
   },
-  mapLabel: {
+  calloutAddress: {
     fontSize: 12,
-    color: '#555',
+    color: COLORS.textMuted,
+    marginBottom: 3,
   },
+  calloutHours: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+    marginBottom: 3,
+  },
+  calloutSlots: {
+    fontSize: 12,
+    color: COLORS.success,
+    fontWeight: '600',
+    marginBottom: 10,
+  },
+  calloutButton: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 8,
+    padding: 8,
+    alignItems: 'center',
+  },
+  calloutButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 13,
+  },
+
+  // My location button
+  myLocationBtn: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  myLocationIcon: {
+    fontSize: 22,
+  },
+
+  // List
   list: {
     flex: 1,
     paddingHorizontal: 16,
@@ -136,16 +403,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     marginTop: 4,
   },
-  errorBox: {
-    backgroundColor: '#fff3f3',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 10,
-  },
-  errorText: {
-    color: COLORS.primary,
-    fontSize: 13,
-  },
   centerCard: {
     backgroundColor: '#fff',
     borderRadius: 14,
@@ -153,20 +410,35 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  centerCardSelected: {
+    borderColor: COLORS.primary,
+    backgroundColor: '#fff8f8',
   },
   centerLeft: {
     flex: 1,
     marginRight: 10,
   },
-  centerName: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.text,
+  centerNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     marginBottom: 4,
   },
+  centerIcon: {
+    fontSize: 16,
+  },
+  centerName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.text,
+    flex: 1,
+  },
   centerAddress: {
-    fontSize: 12,
+    fontSize: 11,
     color: COLORS.textMuted,
     marginBottom: 2,
   },
@@ -176,7 +448,7 @@ const styles = StyleSheet.create({
   },
   centerRight: {
     alignItems: 'flex-end',
-    gap: 4,
+    gap: 6,
   },
   slotsTag: {
     backgroundColor: '#e8fff5',
@@ -187,17 +459,17 @@ const styles = StyleSheet.create({
   slotsText: {
     fontSize: 11,
     color: COLORS.success,
-    fontWeight: '600',
+    fontWeight: '700',
   },
-  typeTag: {
-    backgroundColor: '#fff3f3',
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+  bookBtn: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
-  typeText: {
-    fontSize: 10,
-    color: COLORS.primary,
-    fontWeight: '600',
+  bookBtnText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
   },
 })
