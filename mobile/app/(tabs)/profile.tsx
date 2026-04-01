@@ -14,23 +14,24 @@ import { authService } from '../../services/auth.service'
 import { donationsService } from '../../services/donation.service'
 
 export default function ProfileScreen() {
-  const queryClient  = useQueryClient()
-  const user         = useAuthStore((s) => s.user)
-  const clearAuth = useAuthStore((s) => s.clearAuth)
+  const queryClient = useQueryClient()
+  const user        = useAuthStore((s) => s.user)
+  const clearAuth   = useAuthStore((s) => s.clearAuth)
+  const role        = user?.role || 'DONOR'
 
   const { data: profile, isLoading: profileLoading } = useQuery({
-    queryKey: ['myProfile',user?.id],
-    queryFn: authService.getMe,
-    enabled: !!user,
+    queryKey: ['myProfile', user?.id],
+    queryFn:  authService.getMe,
+    enabled:  !!user,
   })
 
   const { data: donorStats, isLoading: statsLoading } = useQuery({
-    queryKey: ['donationStats',user?.id],
-    queryFn: donationsService.getDonationStats,
-    enabled: profile?.role === 'DONOR',
+    queryKey: ['donationStats', user?.id],
+    queryFn:  donationsService.getDonationStats,
+    enabled:  !!user && role === 'DONOR',
   })
 
-  const isLoading = profileLoading || statsLoading
+  const isLoading = profileLoading || (role === 'DONOR' && statsLoading)
 
   const handleLogout = () => {
     Alert.alert(
@@ -41,7 +42,7 @@ export default function ProfileScreen() {
         {
           text: 'Logout',
           style: 'destructive',
-          onPress: async() => {
+          onPress: async () => {
             await queryClient.clear()
             clearAuth()
             router.replace('/(auth)/login')
@@ -59,50 +60,79 @@ export default function ProfileScreen() {
       </View>
     )
   }
-   // Use profile from backend — fallback to store
-  const displayUser  = profile || user
-  const role         = displayUser?.role || 'DONOR'
 
+  const displayUser = profile || user
 
-  const roleIcon =
-  role === 'ADMIN'               ? '👑'
-    : role === 'STAFF'             ? '🏥'
-    : role === 'EMERGENCY_REQUESTER' ? '🚨'
-    : '🩸'
+  // Role specific config
+  const roleConfig: Record<string, {
+    icon: string
+    label: string
+    desc: string
+    color: string
+  }> = {
+    ADMIN: {
+      icon:  '👑',
+      label: 'Administrator',
+      desc:  'Full system access — manage centers, users and emergencies',
+      color: '#e63946',
+    },
+    STAFF: {
+      icon:  '🏥',
+      label: 'Hospital Staff',
+      desc:  'Manage appointments and donations at your center',
+      color: '#00d4ff',
+    },
+    EMERGENCY_REQUESTER: {
+      icon:  '🚨',
+      label: 'Emergency Requester',
+      desc:  'Post and manage urgent blood requests',
+      color: '#ffd166',
+    },
+    DONOR: {
+      icon:  '🩸',
+      label: 'Blood Donor',
+      desc:  'Donate blood and save up to 3 lives per donation',
+      color: '#06d6a0',
+    },
+  }
 
-  const roleDesc =
-  role === 'ADMIN'               ? 'Full system access'
-    : role === 'STAFF'             ? 'Manage donation center'
-    : role === 'EMERGENCY_REQUESTER' ? 'Post emergency requests'
-    : 'Donate blood and save lives'
+  const rc = roleConfig[role] || roleConfig.DONOR
 
   return (
     <ScrollView style={layout.container}>
+
       {/* Header */}
       <View style={[header.container, { alignItems: 'center' }]}>
+        {/* Avatar */}
         <View style={{
-          width: 80, height: 80, borderRadius: 40,
+          width:           80,
+          height:          80,
+          borderRadius:    40,
           backgroundColor: 'rgba(255,255,255,0.2)',
-          alignItems: 'center', justifyContent: 'center',
-          marginBottom: 12,
-          borderWidth: 3,
-          borderColor: 'rgba(255,255,255,0.4)',
+          alignItems:      'center',
+          justifyContent:  'center',
+          marginBottom:    12,
+          borderWidth:     3,
+          borderColor:     'rgba(255,255,255,0.4)',
         }}>
-          <Text style={{ fontSize: 36 }}>👤</Text>
+          <Text style={{ fontSize: 36 }}>{rc.icon}</Text>
         </View>
-        <Text style={header.name}>{profile?.name}</Text>
-        <Text style={header.subtitle}>{profile?.email}</Text>
-        {/* Blood group badge — donors only */}
+
+        <Text style={header.name}>{displayUser?.name || 'User'}</Text>
+        <Text style={header.subtitle}>{displayUser?.email}</Text>
+
+        {/* Blood group badge — DONORS only */}
         {role === 'DONOR' && displayUser?.bloodGroup && (
           <View style={{
-            backgroundColor:  'rgba(255,255,255,0.2)',
-            borderRadius:     20,
+            backgroundColor:   'rgba(255,255,255,0.2)',
+            borderRadius:      20,
             paddingHorizontal: 16,
-            paddingVertical:  6,
-            marginTop:        8,
+            paddingVertical:   6,
+            marginTop:         8,
           }}>
             <Text style={{ color: '#fff', fontSize: 13, fontWeight: '600' }}>
-              🩸 {displayUser.bloodGroup
+              🩸 Blood Group:{' '}
+              {displayUser.bloodGroup
                 .replace('_POS', '+')
                 .replace('_NEG', '-')}
             </Text>
@@ -112,7 +142,7 @@ export default function ProfileScreen() {
 
       <View style={layout.content}>
 
-        {/* Stats — donors only */}
+        {/* ── DONOR ONLY — Donation Stats ─────────────────────────────────── */}
         {role === 'DONOR' && (
           <View style={stats.row}>
             <View style={stats.box}>
@@ -137,7 +167,7 @@ export default function ProfileScreen() {
           </View>
         )}
 
-        {/* Account Details */}
+        {/* ── Account Details ──────────────────────────────────────────────── */}
         <Text style={typography.sectionTitle}>ACCOUNT DETAILS</Text>
         <View style={cards.base}>
           {[
@@ -146,29 +176,30 @@ export default function ProfileScreen() {
             { label: '📞 Phone',     value: displayUser?.phone || 'Not set' },
             { label: '🏙️ City',      value: displayUser?.city  || 'Not set' },
 
-            // Blood group — donors only
+            // Blood group — DONORS only
             ...(role === 'DONOR' ? [{
               label: '🩸 Blood Group',
               value: displayUser?.bloodGroup
                 ? displayUser.bloodGroup
                     .replace('_POS', '+')
                     .replace('_NEG', '-')
-                : 'Not set'
+                : 'Not set',
             }] : []),
 
-            // Eligible — donors only
+            // Eligible — DONORS only
             ...(role === 'DONOR' ? [{
               label: '✅ Eligible to Donate',
-              value: donorStats?.isEligible ? 'Yes' : 'Not yet'
+              value: donorStats?.isEligible ? 'Yes' : 'Not yet',
             }] : []),
+
           ].map((item, i, arr) => (
             <View
               key={item.label}
               style={{
-                flexDirection:    'row',
-                justifyContent:   'space-between',
-                alignItems:       'center',
-                paddingVertical:  12,
+                flexDirection:     'row',
+                justifyContent:    'space-between',
+                alignItems:        'center',
+                paddingVertical:   12,
                 paddingHorizontal: 4,
                 borderBottomWidth: i < arr.length - 1 ? 1 : 0,
                 borderBottomColor: COLORS.surface,
@@ -182,17 +213,32 @@ export default function ProfileScreen() {
           ))}
         </View>
 
-        {/* Role Card */}
+        {/* ── Role Card ────────────────────────────────────────────────────── */}
         <Text style={typography.sectionTitle}>ACCOUNT TYPE</Text>
-        <View style={cards.row}>
-          <Text style={{ fontSize: 36 }}>{roleIcon}</Text>
-          <View>
-            <Text style={typography.cardTitle}>{role}</Text>
-            <Text style={typography.cardSubtitle}>{roleDesc}</Text>
+        <View style={[cards.base, {
+          borderLeftWidth: 4,
+          borderLeftColor: rc.color,
+          flexDirection:   'row',
+          alignItems:      'center',
+          gap:             14,
+        }]}>
+          <View style={{
+            width:           50,
+            height:          50,
+            borderRadius:    25,
+            backgroundColor: `${rc.color}22`,
+            alignItems:      'center',
+            justifyContent:  'center',
+          }}>
+            <Text style={{ fontSize: 24 }}>{rc.icon}</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={typography.cardTitle}>{rc.label}</Text>
+            <Text style={typography.cardSubtitle}>{rc.desc}</Text>
           </View>
         </View>
 
-        {/* Next Donation — donors only */}
+        {/* ── DONOR ONLY — Next Donation Date ─────────────────────────────── */}
         {role === 'DONOR' && (
           <>
             <Text style={typography.sectionTitle}>NEXT DONATION DATE</Text>
@@ -214,7 +260,7 @@ export default function ProfileScreen() {
           </>
         )}
 
-        {/* Logout Button */}
+        {/* ── Logout ──────────────────────────────────────────────────────── */}
         <TouchableOpacity
           style={buttons.outline}
           onPress={handleLogout}

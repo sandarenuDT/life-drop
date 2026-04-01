@@ -1,8 +1,7 @@
 
 
 import {
-  View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, Alert, TextInput, ActivityIndicator,
+  View, Text, ScrollView, TouchableOpacity, Alert, TextInput, ActivityIndicator,
   Modal
 } from 'react-native'
 import { useState } from 'react'
@@ -16,6 +15,7 @@ import { adminService } from '../../services/admin.service'
 import { centersService } from '../../services/center.service'
 import { adminStyles } from '../../constants/styles'
 const CENTER_TYPES = ['BANK', 'HOSPITAL', 'NGO', 'CLINIC']
+
 
 const CENTER_TYPE_ICONS: Record<string, string> = {
   BANK:     '🏦',
@@ -356,12 +356,16 @@ export default function AdminScreen() {
   const { data: adminStats, isLoading: statsLoading } = useQuery({
     queryKey: ['adminStats'],
     queryFn: adminService.getStats,
+    refetchOnWindowFocus: true,
+  staleTime: 0,
   })
 
   // All Centers
   const { data: centers, isLoading: centersLoading } = useQuery({
     queryKey: ['centers'],
     queryFn: centersService.getAllCenters,
+      staleTime: 0,
+
   })
 
   // All Users
@@ -369,6 +373,8 @@ export default function AdminScreen() {
     queryKey: ['allUsers'],
     queryFn: adminService.getAllUSers,
     enabled: activeTab === 'users',
+      staleTime: 0,
+
   })
 
   // Delete Center
@@ -437,10 +443,33 @@ export default function AdminScreen() {
     <View style={layout.container}>
 
       {/* Header */}
-      <View style={header.container}>
-        <Text style={header.title}>👑 Admin Panel</Text>
-        <Text style={header.subtitle}>Manage your LifeDrop system</Text>
-      </View>
+      {/* Header */}
+<View style={header.container}>
+  <View style={{
+    flexDirection:  'row',
+    justifyContent: 'space-between',
+    alignItems:     'center',
+  }}>
+    <View>
+      <Text style={header.title}>👑 Admin Panel</Text>
+      <Text style={header.subtitle}>Manage your LifeDrop system</Text>
+    </View>
+    <TouchableOpacity
+      onPress={() => {
+        queryClient.invalidateQueries({ queryKey: ['adminStats'] })
+        queryClient.invalidateQueries({ queryKey: ['centers']    })
+        queryClient.invalidateQueries({ queryKey: ['allUsers']   })
+      }}
+      style={{
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        borderRadius:    10,
+        padding:         10,
+      }}
+    >
+      <Text style={{ fontSize: 20 }}>🔄</Text>
+    </TouchableOpacity>
+  </View>
+</View>
 
       <ScrollView style={layout.content}>
 

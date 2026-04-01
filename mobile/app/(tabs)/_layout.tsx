@@ -1,8 +1,11 @@
-
 import { Tabs } from 'expo-router'
+import { Text } from 'react-native'
 import { COLORS } from '../../constants/color'
 import { useAuthStore } from '../../store/authStore'
-import { Text } from 'react-native';
+
+function Icon({ emoji }: { emoji: string }) {
+  return <Text style={{ fontSize: 20 }}>{emoji}</Text>
+}
 
 export default function TabsLayout() {
   const user = useAuthStore((s) => s.user)
@@ -11,91 +14,83 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: COLORS.primary,
+        headerShown:            false,
+        tabBarActiveTintColor:   COLORS.primary,
         tabBarInactiveTintColor: COLORS.textMuted,
         tabBarStyle: {
           backgroundColor: '#ffffff',
-          borderTopColor: COLORS.border,
+          borderTopColor:  COLORS.border,
+          paddingBottom:   4,
+          height:          60,
         },
       }}
     >
+      {/* Home — ALL roles */}
       <Tabs.Screen
         name="index"
         options={{
           tabBarLabel: 'Home',
-          tabBarIcon: ({ color }) => (
-            <TabIcon icon="🏠" color={color} />
-          ),
+          tabBarIcon:  () => <Icon emoji="🏠" />,
         }}
       />
+
+      {/* Find Centers — DONOR + STAFF only */}
       <Tabs.Screen
         name="map"
         options={{
-          tabBarLabel: 'Find',
-          tabBarIcon: ({ color }) => (
-            <TabIcon icon="📍" color={color} />
-          ),
-          // Hide map for admin
-          tabBarItemStyle: role === 'ADMIN' || role === 'EMERGENCY_RESPONDER'
+          tabBarLabel:     'Find',
+          tabBarIcon:      () => <Icon emoji="📍" />,
+          tabBarItemStyle: (role === 'ADMIN' || role === 'EMERGENCY_REQUESTER')
             ? { display: 'none' }
-            : {}
+            : {},
         }}
       />
+
+      {/* SOS — DONOR + STAFF + EMERGENCY_REQUESTER only
+          Admin does NOT need SOS tab — they manage it from Admin Panel */}
       <Tabs.Screen
         name="emergency"
         options={{
-          tabBarLabel: 'SOS',
-          tabBarIcon: ({ color }) => (
-            <TabIcon icon="🚨" color={color} />
-          ),
+          tabBarLabel:     'SOS',
+          tabBarIcon:      () => <Icon emoji="🚨" />,
+          tabBarItemStyle: role === 'ADMIN'
+            ? { display: 'none' }
+            : {},
         }}
       />
+
+      {/* History — DONOR only */}
       <Tabs.Screen
         name="history"
         options={{
-          tabBarLabel: 'History',
-          tabBarIcon: ({ color }) => (
-            <TabIcon icon="📋" color={color} />
-          ),
-          // Hide history for non donors
+          tabBarLabel:     'History',
+          tabBarIcon:      () => <Icon emoji="📋" />,
           tabBarItemStyle: role !== 'DONOR'
             ? { display: 'none' }
-            : {}
+            : {},
         }}
       />
-      {/* //fro admin panel */}
+
+      {/* Admin Panel — ADMIN only */}
       <Tabs.Screen
         name="admin"
         options={{
-          tabBarLabel: 'Admin',
-          tabBarIcon: ({ color }) => (
-            <TabIcon icon="👑" color={color} />
-          ),
+          tabBarLabel:     'Admin',
+          tabBarIcon:      () => <Icon emoji="👑" />,
           tabBarItemStyle: role !== 'ADMIN'
             ? { display: 'none' }
             : {},
         }}
       />
 
+      {/* Profile — ALL roles */}
       <Tabs.Screen
         name="profile"
         options={{
           tabBarLabel: 'Profile',
-          tabBarIcon: ({ color }) => (
-            <TabIcon icon="👤" color={color} />
-          ),
+          tabBarIcon:  () => <Icon emoji="👤" />,
         }}
       />
     </Tabs>
-  )
-}
-
-
-function TabIcon({ icon, color }: { icon: string; color: string }) {
-  return (
-    <Text style={{ color, fontSize: 18 }}>
-      {icon}
-    </Text>
   )
 }
