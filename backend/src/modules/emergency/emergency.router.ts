@@ -1,37 +1,63 @@
-import { Router } from "express";
-import { authenticate } from "../../middleware/auth.middleware";
-import { getEmergencyRequestsController, createEmergencyRequestController, resolveEmergencyRequestController } from "./emergency.controller";
-import { requireRole } from "../../middleware/role.middleware";
-import { create } from "node:domain";
+import { Router } from 'express'
+import {
+  getEmergencyRequestsController,
+  getMyEmergencyRequestsController,
+  getMyResponsesController,
+  getEmergencyRequestByIdController,
+  createEmergencyRequestController,
+  respondToEmergencyController,
+  cancelResponseController,
+  resolveEmergencyRequestController,
+  getRequestsByBloodGroupController,
+} from './emergency.controller'
+import { authenticate } from '../../middleware/auth.middleware'
+import { requireRole  } from '../../middleware/role.middleware'
 
-export const emergencyRouter = Router();
+export const emergencyRouter = Router()
 
-//all routes require login 
-emergencyRouter.use(authenticate);
+emergencyRouter.use(authenticate)
 
-//get /api/emergency
-// all users can see emergency requests
-emergencyRouter.get('/', getEmergencyRequestsController);
+// GET /api/emergency
+emergencyRouter.get('/', getEmergencyRequestsController)
 
-//get /api/emergency/my-requests
-//see your own posted requests
-emergencyRouter.get('/my-requests', getEmergencyRequestsController);
+// GET /api/emergency/my-requests
+emergencyRouter.get('/my-requests', getMyEmergencyRequestsController)
 
-//get /api/emergency/blood-group/:bloodGroup
-//see requests by blood group
-emergencyRouter.get('/blood-group/:bloodGroup', getEmergencyRequestsController);
+// GET /api/emergency/my-responses — Donors
+emergencyRouter.get(
+  '/my-responses',
+  requireRole('DONOR'),
+  getMyResponsesController
+)
 
+// GET /api/emergency/blood-group/:bloodGroup
+emergencyRouter.get(
+  '/blood-group/:bloodGroup',
+  getRequestsByBloodGroupController
+)
 
-// all users can see details of a request
-emergencyRouter.get('/:id', getEmergencyRequestsController);
+// GET /api/emergency/:id
+emergencyRouter.get('/:id', getEmergencyRequestByIdController)
 
-
-//post /api/emergency
-//only staff and emergency can post
+// POST /api/emergency — Staff + ER + Admin
 emergencyRouter.post(
-    '/',
-    requireRole('STAFF','EMERGENCY_REQUESTER', 'ADMIN'),
-    createEmergencyRequestController
+  '/',
+  requireRole('STAFF', 'EMERGENCY_REQUESTER', 'ADMIN'),
+  createEmergencyRequestController
+)
+
+// POST /api/emergency/:id/respond — Donors only
+emergencyRouter.post(
+  '/:id/respond',
+  requireRole('DONOR'),
+  respondToEmergencyController
+)
+
+// DELETE /api/emergency/:id/respond — Donors only
+emergencyRouter.delete(
+  '/:id/respond',
+  requireRole('DONOR'),
+  cancelResponseController
 )
 
 // PUT /api/emergency/:id/resolve
