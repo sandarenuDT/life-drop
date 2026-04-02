@@ -10,6 +10,7 @@ import {
   layout, header, cards, typography,
   buttons, emptyState, modal as modalStyles
 } from '../../constants/styles'
+import { emergencyStyles as styles } from '../../constants/emergency.styles'
 import { emergencyService } from '../../services/emergency.service'
 import { useAuthStore } from '../../store/authStore'
 import DropDownPicker from 'react-native-dropdown-picker'
@@ -17,26 +18,26 @@ import DropDownPicker from 'react-native-dropdown-picker'
 // ── Urgency Colors ────────────────────────────────────────────────────────────
 const urgencyConfig = {
   CRITICAL: { bg: '#fff0f0', text: '#e63946', border: '#ffc0c0', label: '🔴 CRITICAL' },
-  URGENT:   { bg: '#fff8ed', text: '#ff9f43', border: '#ffd9a0', label: '🟠 URGENT'   },
-  NEEDED:   { bg: '#f0fff8', text: '#06d6a0', border: '#a0ffd9', label: '🟢 NEEDED'   },
+  URGENT: { bg: '#fff8ed', text: '#ff9f43', border: '#ffd9a0', label: '🟠 URGENT' },
+  NEEDED: { bg: '#f0fff8', text: '#06d6a0', border: '#a0ffd9', label: '🟢 NEEDED' },
 }
 
 // ── Blood Groups ──────────────────────────────────────────────────────────────
 const BLOOD_GROUPS = [
-  { value: 'A_POS',  label: 'A+'  },
-  { value: 'A_NEG',  label: 'A-'  },
-  { value: 'B_POS',  label: 'B+'  },
-  { value: 'B_NEG',  label: 'B-'  },
+  { value: 'A_POS', label: 'A+' },
+  { value: 'A_NEG', label: 'A-' },
+  { value: 'B_POS', label: 'B+' },
+  { value: 'B_NEG', label: 'B-' },
   { value: 'AB_POS', label: 'AB+' },
   { value: 'AB_NEG', label: 'AB-' },
-  { value: 'O_POS',  label: 'O+'  },
-  { value: 'O_NEG',  label: 'O-'  },
+  { value: 'O_POS', label: 'O+' },
+  { value: 'O_NEG', label: 'O-' },
 ]
 
 const URGENCY_LEVELS = [
-  { value: 'CRITICAL', label: '🔴 Critical — Immediate need'  },
-  { value: 'URGENT',   label: '🟠 Urgent — Needed soon'       },
-  { value: 'NEEDED',   label: '🟢 Needed — General request'   },
+  { value: 'CRITICAL', label: '🔴 Critical — Immediate need' },
+  { value: 'URGENT', label: '🟠 Urgent — Needed soon' },
+  { value: 'NEEDED', label: '🟢 Needed — General request' },
 ]
 
 // ── Post SOS Modal ────────────────────────────────────────────────────────────
@@ -48,28 +49,28 @@ function PostSOSModal({
   onClose: () => void
 }) {
   const queryClient = useQueryClient()
-  const user        = useAuthStore((s) => s.user)
+  const user = useAuthStore((s) => s.user)
 
-  const [bloodGroup,  setBloodGroup]  = useState<string | null>(null)
-  const [hospital,    setHospital]    = useState('')
-  const [city,        setCity]        = useState(user?.city || '')
-  const [units,       setUnits]       = useState('1')
-  const [urgency,     setUrgency]     = useState<string | null>(null)
-  const [errors,      setErrors]      = useState<Record<string, string>>({})
-  const [touched,     setTouched]     = useState<Record<string, boolean>>({})
+  const [bloodGroup, setBloodGroup] = useState<string | null>(null)
+  const [hospital, setHospital] = useState('')
+  const [city, setCity] = useState(user?.city || '')
+  const [units, setUnits] = useState('1')
+  const [urgency, setUrgency] = useState<string | null>(null)
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [touched, setTouched] = useState<Record<string, boolean>>({})
 
   // Dropdowns
-  const [bloodOpen,   setBloodOpen]   = useState(false)
+  const [bloodOpen, setBloodOpen] = useState(false)
   const [urgencyOpen, setUrgencyOpen] = useState(false)
-  const [bloodItems,  setBloodItems]  = useState(BLOOD_GROUPS)
+  const [bloodItems, setBloodItems] = useState(BLOOD_GROUPS)
   const [urgencyItems, setUrgencyItems] = useState(URGENCY_LEVELS)
 
   const validate = () => {
     const e: Record<string, string> = {}
-    if (!bloodGroup)                    e.bloodGroup = 'Please select a blood group'
+    if (!bloodGroup) e.bloodGroup = 'Please select a blood group'
     if (!hospital || hospital.length < 3) e.hospital = 'Hospital name is required'
-    if (!city     || city.length     < 2) e.city     = 'City is required'
-    if (!urgency)                       e.urgency   = 'Please select urgency level'
+    if (!city || city.length < 2) e.city = 'City is required'
+    if (!urgency) e.urgency = 'Please select urgency level'
     if (!units || isNaN(parseInt(units)) || parseInt(units) < 1)
       e.units = 'Please enter a valid number of units (min 1)'
     return e
@@ -78,7 +79,7 @@ function PostSOSModal({
   const { mutate: postRequest, isPending } = useMutation({
     mutationFn: emergencyService.createEmergencyRequest,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['emergencyRequests']   })
+      queryClient.invalidateQueries({ queryKey: ['emergencyRequests'] })
       queryClient.invalidateQueries({ queryKey: ['myEmergencyRequests'] })
       Alert.alert(
         '✅ Request Posted!',
@@ -114,7 +115,7 @@ function PostSOSModal({
       bloodGroup: bloodGroup!,
       hospital,
       city,
-      units:   parseInt(units),
+      units: parseInt(units),
       urgency: urgency!,
     })
   }
@@ -142,7 +143,11 @@ function PostSOSModal({
               open={bloodOpen}
               value={bloodGroup}
               items={bloodItems}
-              setOpen={(o) => { setBloodOpen(o); if (o === true) setUrgencyOpen(false) }}
+              setOpen={(o) => {
+                const isOpen = typeof o === 'function' ? o(bloodOpen) : o
+                setBloodOpen(isOpen)
+                if (isOpen) setUrgencyOpen(false)
+              }}
               setValue={(v) => {
                 setBloodGroup(v)
                 setTouched(p => ({ ...p, bloodGroup: true }))
@@ -171,8 +176,8 @@ function PostSOSModal({
             <TextInput
               style={[
                 styles.input,
-                touched.hospital && errors.hospital   && styles.inputError,
-                touched.hospital && !errors.hospital  && styles.inputSuccess,
+                touched.hospital && errors.hospital && styles.inputError,
+                touched.hospital && !errors.hospital && styles.inputSuccess,
               ]}
               placeholder="e.g. Negombo General Hospital"
               value={hospital}
@@ -190,8 +195,8 @@ function PostSOSModal({
             <TextInput
               style={[
                 styles.input,
-                touched.city && errors.city   && styles.inputError,
-                touched.city && !errors.city  && styles.inputSuccess,
+                touched.city && errors.city && styles.inputError,
+                touched.city && !errors.city && styles.inputSuccess,
               ]}
               placeholder="e.g. Negombo"
               value={city}
@@ -209,8 +214,8 @@ function PostSOSModal({
             <TextInput
               style={[
                 styles.input,
-                touched.units && errors.units   && styles.inputError,
-                touched.units && !errors.units  && styles.inputSuccess,
+                touched.units && errors.units && styles.inputError,
+                touched.units && !errors.units && styles.inputSuccess,
               ]}
               placeholder="e.g. 2"
               value={units}
@@ -230,7 +235,12 @@ function PostSOSModal({
               open={urgencyOpen}
               value={urgency}
               items={urgencyItems}
-              setOpen={(o) => { setUrgencyOpen(o); if (o) setBloodOpen(false) }}
+              setOpen={(o) => {
+                const isOpen = typeof o === 'function' ? o(urgencyOpen) : o
+
+                setUrgencyOpen(isOpen)
+                if (isOpen) setBloodOpen(false)
+              }}
               setValue={(v) => {
                 setUrgency(v)
                 setTouched(p => ({ ...p, urgency: true }))
@@ -240,8 +250,8 @@ function PostSOSModal({
               listMode="SCROLLVIEW"
               style={[
                 styles.dropdown,
-                touched.urgency && errors.urgency   && styles.inputError,
-                touched.urgency && !errors.urgency  && urgency && styles.inputSuccess,
+                touched.urgency && errors.urgency && styles.inputError,
+                touched.urgency && !errors.urgency && urgency && styles.inputSuccess,
               ]}
               dropDownContainerStyle={styles.dropdownContainer}
               zIndex={2000}
@@ -294,12 +304,12 @@ function EmergencyCard({
       <View style={{ flexDirection: 'row', gap: 14, marginBottom: 12 }}>
         {/* Blood Group */}
         <View style={{
-          width:           60,
-          height:          60,
-          borderRadius:    12,
+          width: 60,
+          height: 60,
+          borderRadius: 12,
           backgroundColor: `${uc.text}18`,
-          alignItems:      'center',
-          justifyContent:  'center',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}>
           <Text style={{ fontSize: 22, fontWeight: '800', color: uc.text }}>
             {req.bloodGroup.replace('_POS', '+').replace('_NEG', '-')}
@@ -333,7 +343,7 @@ function EmergencyCard({
           <Text style={styles.detailLabel}>Posted</Text>
           <Text style={styles.detailValue}>
             {new Date(req.createdAt).toLocaleTimeString([], {
-              hour:   '2-digit',
+              hour: '2-digit',
               minute: '2-digit',
             })}
           </Text>
@@ -377,28 +387,28 @@ function EmergencyCard({
 // ── Main Screen ───────────────────────────────────────────────────────────────
 export default function EmergencyScreen() {
   const queryClient = useQueryClient()
-  const user        = useAuthStore((s) => s.user)
-  const role        = user?.role || 'DONOR'
+  const user = useAuthStore((s) => s.user)
+  const role = user?.role || 'DONOR'
 
   const [showPostModal, setShowPostModal] = useState(false)
-  const [activeTab, setActiveTab]         = useState<'all' | 'mine'>('all')
+  const [activeTab, setActiveTab] = useState<'all' | 'mine'>('all')
 
   // All active emergency requests
   const { data: allRequests, isLoading: allLoading } = useQuery({
     queryKey: ['emergencyRequests'],
-    queryFn:  () => emergencyService.getEmergencyRequests(),
+    queryFn: () => emergencyService.getEmergencyRequests(),
     refetchInterval: 30000,
   })
 
   // My posted requests
   const { data: myRequests, isLoading: myLoading } = useQuery<any[]>({
     queryKey: ['myEmergencyRequests', user?.id],
-    queryFn:  () => emergencyService.getEmergencyRequests().then(reqs =>
+    queryFn: () => emergencyService.getEmergencyRequests().then(reqs =>
       reqs.filter((req: any) => req.postedBy === user?.id)
     ),
     enabled:
       role === 'EMERGENCY_REQUESTER' ||
-      role === 'STAFF'               ||
+      role === 'STAFF' ||
       role === 'ADMIN',
   })
 
@@ -406,7 +416,7 @@ export default function EmergencyScreen() {
   const { mutate: resolveRequest } = useMutation({
     mutationFn: emergencyService.resolveEmergencyRequest,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['emergencyRequests']   })
+      queryClient.invalidateQueries({ queryKey: ['emergencyRequests'] })
       queryClient.invalidateQueries({ queryKey: ['myEmergencyRequests'] })
       Alert.alert('✅ Resolved', 'Emergency request marked as resolved.')
     },
@@ -496,9 +506,9 @@ export default function EmergencyScreen() {
     <View style={layout.container}>
       <View style={header.container}>
         <View style={{
-          flexDirection:  'row',
+          flexDirection: 'row',
           justifyContent: 'space-between',
-          alignItems:     'center',
+          alignItems: 'center',
         }}>
           <View>
             <Text style={header.title}>🚨 Emergency Requests</Text>
@@ -635,123 +645,3 @@ export default function EmergencyScreen() {
     </View>
   )
 }
-
-// ── Local Styles ──────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
-  tabRow: {
-    flexDirection:   'row',
-    backgroundColor: '#fff',
-    margin:          16,
-    marginBottom:    0,
-    borderRadius:    14,
-    padding:         4,
-  },
-  tab: {
-    flex:          1,
-    padding:       10,
-    borderRadius:  10,
-    alignItems:    'center',
-  },
-  tabActive: {
-    backgroundColor: COLORS.primary,
-  },
-  tabText: {
-    fontSize:   12,
-    fontWeight: '600',
-    color:      COLORS.textMuted,
-  },
-  tabTextActive: {
-    color: '#fff',
-  },
-  postBtn: {
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    borderRadius:    10,
-    paddingHorizontal: 14,
-    paddingVertical:   8,
-    borderWidth:     1,
-    borderColor:     'rgba(255,255,255,0.4)',
-  },
-  postBtnText: {
-    color:      '#fff',
-    fontWeight: '700',
-    fontSize:   14,
-  },
-  urgencyBadge: {
-    alignSelf:         'flex-start',
-    borderWidth:       1,
-    borderRadius:      20,
-    paddingHorizontal: 10,
-    paddingVertical:   3,
-  },
-  urgencyText: {
-    fontSize:   11,
-    fontWeight: '800',
-  },
-  detailsRow: {
-    flexDirection:    'row',
-    justifyContent:   'space-between',
-    backgroundColor:  COLORS.surface,
-    borderRadius:     10,
-    padding:          12,
-  },
-  detailItem: {
-    alignItems: 'center',
-    flex:       1,
-  },
-  detailLabel: {
-    fontSize:  10,
-    color:     COLORS.textMuted,
-    marginBottom: 4,
-  },
-  detailValue: {
-    fontSize:   13,
-    fontWeight: '700',
-    color:      COLORS.text,
-  },
-  resolveBtn: {
-    backgroundColor: '#e8fff5',
-    borderRadius:    12,
-    padding:         14,
-    alignItems:      'center',
-    borderWidth:     1.5,
-    borderColor:     COLORS.success,
-  },
-  resolveBtnText: {
-    color:      COLORS.success,
-    fontWeight: '700',
-    fontSize:   14,
-  },
-  dropdown: {
-    borderColor:  COLORS.border,
-    borderRadius: 12,
-    borderWidth:  1.5,
-  },
-  dropdownContainer: {
-    borderColor:  COLORS.border,
-    borderWidth:  1.5,
-    borderRadius: 12,
-  },
-  input: {
-    borderWidth:   1.5,
-    borderColor:   COLORS.border,
-    borderRadius:  12,
-    padding:       13,
-    fontSize:      14,
-    color:         COLORS.text,
-    backgroundColor: '#fff',
-    marginBottom:  4,
-  },
-  inputError: {
-    borderColor:     '#FF3B30',
-    backgroundColor: '#fff8f8',
-  },
-  inputSuccess: {
-    borderColor:     '#06d6a0',
-    backgroundColor: '#f8fffc',
-  },
-  errorText: {
-    fontSize:  12,
-    color:     '#cc0000',
-    marginBottom: 4,
-  },
-})
