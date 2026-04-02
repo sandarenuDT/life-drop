@@ -23,9 +23,10 @@ model User {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
-  donations     Donation[]
-  appointments  Appointment[]
-  refreshTokens RefreshToken[]
+  donations          Donation[]
+  appointments       Appointment[]
+  refreshTokens      RefreshToken[]
+  emergencyResponses EmergencyResponse[]
 
   @@map("users")
 }
@@ -88,7 +89,23 @@ model EmergencyRequest {
   resolved   Boolean    @default(false)
   createdAt  DateTime   @default(now())
 
+  responses EmergencyResponse[]
+
   @@map("emergency_requests")
+}
+
+model EmergencyResponse {
+  id        String         @id @default(cuid())
+  requestId String
+  donorId   String
+  status    ResponseStatus @default(PENDING)
+  createdAt DateTime       @default(now())
+
+  request EmergencyRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  donor   User             @relation(fields: [donorId],   references: [id], onDelete: Cascade)
+
+  @@unique([requestId, donorId])
+  @@map("emergency_responses")
 }
 
 model RefreshToken {
@@ -103,14 +120,23 @@ model RefreshToken {
   @@map("refresh_tokens")
 }
 
+// ── Enums ─────────────────────────────────────────────────────────────────────
+
+enum Role {
+  DONOR
+  STAFF
+  ADMIN
+  EMERGENCY_REQUESTER
+}
+
 enum BloodGroup {
-  A_POS 
+  A_POS
   A_NEG
-  B_POS  
+  B_POS
   B_NEG
-  AB_POS 
+  AB_POS
   AB_NEG
-  O_POS  
+  O_POS
   O_NEG
 }
 
@@ -140,9 +166,9 @@ enum Urgency {
   URGENT
   NEEDED
 }
-enum Role {
-  DONOR
-  STAFF
-  ADMIN
-  EMERGENCY_REQUESTER
+
+enum ResponseStatus {
+  PENDING
+  DONATED
+  CANCELLED
 }
