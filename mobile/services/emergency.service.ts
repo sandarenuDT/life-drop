@@ -1,4 +1,3 @@
-
 import { api } from './api'
 
 export const emergencyService = {
@@ -17,6 +16,12 @@ export const emergencyService = {
     return response.data
   },
 
+  // Get MY responses as donor
+  getMyResponses: async () => {
+    const response = await api.get('/emergency/my-responses')
+    return response.data
+  },
+
   // Post a new emergency request
   createEmergencyRequest: async (data: {
     bloodGroup: string
@@ -26,6 +31,18 @@ export const emergencyService = {
     urgency:    string
   }) => {
     const response = await api.post('/emergency', data)
+    return response.data
+  },
+
+  // Donor responds to a request
+  respondToEmergency: async (requestId: string) => {
+    const response = await api.post(`/emergency/${requestId}/respond`)
+    return response.data
+  },
+
+  // Donor cancels their response
+  cancelResponse: async (requestId: string) => {
+    const response = await api.delete(`/emergency/${requestId}/respond`)
     return response.data
   },
 
