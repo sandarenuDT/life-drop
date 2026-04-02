@@ -58,14 +58,14 @@ donationsRouter.get(
 )
 
 ///staff + admin routes
-//get /api/donations/appoinments/all
+//get /api/donations/all
 donationsRouter.get(
   '/all',
   requireRole('STAFF', 'ADMIN'),
   getAllAppointmentsController
 )
 
-//get api/appointments/today
+//get api/donations/today
 donationsRouter.get(
   '/today',
   requireRole('STAFF', 'ADMIN'),
