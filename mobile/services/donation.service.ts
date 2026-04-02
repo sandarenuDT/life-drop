@@ -38,7 +38,7 @@ export const donationsService = {
 
   // for staff get all appointment s
   getAllAppointments: async () => {
-    const response = await api.get("/donations/appoinments");
+    const response = await api.get("/donations/all");
     return response.data;
   },
 
