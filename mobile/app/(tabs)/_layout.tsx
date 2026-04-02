@@ -70,6 +70,17 @@ export default function TabsLayout() {
             : {},
         }}
       />
+      {/* Staff Panel — STAFF only */}
+      <Tabs.Screen
+        name="staff"
+        options={{
+          tabBarLabel:     'Panel',
+          tabBarIcon:      () => <Icon emoji="🏥" />,
+          tabBarItemStyle: role !== 'STAFF'
+            ? { display: 'none' }
+            : {},
+        }}
+      />
 
       {/* Admin Panel — ADMIN only */}
       <Tabs.Screen

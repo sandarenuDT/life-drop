@@ -99,3 +99,62 @@ export const getDonationStatsController = async (
     next(error)
   }
 }
+// GET /api/donations/all — Staff + Admin
+export const getAllAppointmentsController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const appointments = await donationsService.getAllAppointments()
+    res.status(200).json(appointments)
+  } catch (error) { next(error) }
+}
+
+// GET /api/donations/today — Staff + Admin
+export const getTodayAppointmentsController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const appointments = await donationsService.getTodayAppointments()
+    res.status(200).json(appointments)
+  } catch (error) { next(error) }
+}
+
+// GET /api/donations/stats — Staff + Admin
+export const getAppointmentStatsController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const stats = await donationsService.getAppointmentStats()
+    res.status(200).json(stats)
+  } catch (error) { next(error) }
+}
+
+// PUT /api/donations/appointments/:id/confirm — Staff + Admin
+export const confirmAppointmentController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const appointment = await donationsService.confirmAppointment(req.params.id as string)
+    res.status(200).json(appointment)
+  } catch (error) { next(error) }
+}
+
+// PUT /api/donations/appointments/:id/complete — Staff + Admin
+export const completeAppointmentController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const appointment = await donationsService.completeAppointment(req.params.id as string)
+    res.status(200).json(appointment)
+  } catch (error) { next(error) }
+}
