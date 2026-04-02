@@ -22,21 +22,27 @@ export default function HomeScreen() {
   // Donor stats
   const { data: donorStats } = useQuery({
     queryKey: ['donationStats', user?.id],
-    queryFn:  donationsService.getDonationStats,
-    enabled:  role === 'DONOR',
+    queryFn: donationsService.getDonationStats,
+    enabled: role === 'DONOR',
+  })
+  // Staff stats
+  const { data: staffStats } = useQuery({
+    queryKey: ['appointmentStats', user?.id],
+    queryFn: donationsService.getAppointmentStats,
+    enabled: role === 'STAFF',
   })
 
   // Admin stats
   const { data: adminStats, isLoading: adminLoading } = useQuery({
     queryKey: ['adminStats', user?.id],
-    queryFn:  adminService.getStats,
-    enabled:  role === 'ADMIN',
+    queryFn: adminService.getStats,
+    enabled: role === 'ADMIN',
   })
 
   // Emergency requests — all roles
   const { data: emergencyRequests } = useQuery({
     queryKey: ['emergencyRequests'],
-    queryFn:  () => emergencyService.getEmergencyRequests(),
+    queryFn: () => emergencyService.getEmergencyRequests(),
   })
 
   const criticalCount = emergencyRequests?.filter(
@@ -63,118 +69,118 @@ export default function HomeScreen() {
 
   // ── ADMIN HOME ───────────────────────────────────────────────────────────────
   // ── ADMIN HOME ───────────────────────────────────────────────────────────────
-if (role === 'ADMIN') {
-  return (
-    <ScrollView style={layout.container}>
-      <View style={header.container}>
-        <View style={{
-          flexDirection:  'row',
-          justifyContent: 'space-between',
-          alignItems:     'flex-start',
-        }}>
-          <View>
-            <Text style={header.roleTag}>👑 Administrator</Text>
-            <Text style={header.name}>Welcome, {user?.name}!</Text>
-            <Text style={header.subtitle}>Manage your LifeDrop system</Text>
-          </View>
-          {/* Refresh button */}
-          <TouchableOpacity
-            onPress={() => {
-              queryClient.invalidateQueries({ queryKey: ['adminStats'] })
-            }}
-            style={{
-              backgroundColor: 'rgba(255,255,255,0.2)',
-              borderRadius:    10,
-              padding:         8,
-              marginTop:       4,
-            }}
-          >
-            <Text style={{ fontSize: 18 }}>🔄</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <View style={layout.content}>
-        {/* Admin Stats */}
-        {adminLoading ? (
-          <ActivityIndicator
-            color={COLORS.primary}
-            style={{ marginVertical: 20 }}
-          />
-        ) : (
-          <>
-            {/* Row 1 */}
-            <View style={stats.row}>
-              <View style={[stats.box, { borderTopWidth: 3, borderTopColor: '#00d4ff' }]}>
-                <Text style={stats.icon}>👥</Text>
-                <Text style={[stats.value, { color: '#00d4ff' }]}>
-                  {adminStats?.totalUsers || 0}
-                </Text>
-                <Text style={stats.label}>Total Users</Text>
-              </View>
-              <View style={[stats.box, { borderTopWidth: 3, borderTopColor: '#06d6a0' }]}>
-                <Text style={stats.icon}>🩸</Text>
-                <Text style={[stats.value, { color: '#06d6a0' }]}>
-                  {adminStats?.totalDonors || 0}
-                </Text>
-                <Text style={stats.label}>Donors</Text>
-              </View>
+  if (role === 'ADMIN') {
+    return (
+      <ScrollView style={layout.container}>
+        <View style={header.container}>
+          <View style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+          }}>
+            <View>
+              <Text style={header.roleTag}>👑 Administrator</Text>
+              <Text style={header.name}>Welcome, {user?.name}!</Text>
+              <Text style={header.subtitle}>Manage your LifeDrop system</Text>
             </View>
-
-            {/* Row 2 */}
-            <View style={stats.row}>
-              <View style={[stats.box, { borderTopWidth: 3, borderTopColor: '#ffd166' }]}>
-                <Text style={stats.icon}>🏥</Text>
-                <Text style={[stats.value, { color: '#ffd166' }]}>
-                  {adminStats?.totalCenters || 0}
-                </Text>
-                <Text style={stats.label}>Centers</Text>
-              </View>
-              <View style={[stats.box, { borderTopWidth: 3, borderTopColor: '#e63946' }]}>
-                <Text style={stats.icon}>🚨</Text>
-                <Text style={[stats.value, { color: '#e63946' }]}>
-                  {adminStats?.activeEmergencies || 0}
-                </Text>
-                <Text style={stats.label}>Active SOS</Text>
-              </View>
-            </View>
-          </>
-        )}
-
-        {/* Quick Actions */}
-        <Text style={typography.sectionTitle}>QUICK ACTIONS</Text>
-        <View style={qa.grid}>
-          {[
-            {
-              icon:    '🏥',
-              label:   'Add Center',
-              onPress: () => router.push('/(tabs)/admin' as any)
-            },
-            {
-              icon:    '👥',
-              label:   'Manage Users',
-              onPress: () => router.push('/(tabs)/admin' as any)
-            },
-            {
-              icon:    '👤',
-              label:   'My Profile',
-              onPress: () => router.push('/(tabs)/profile' as any)
-            },
-          ].map((a) => (
+            {/* Refresh button */}
             <TouchableOpacity
-              key={a.label}
-              style={qa.item}
-              onPress={a.onPress}
+              onPress={() => {
+                queryClient.invalidateQueries({ queryKey: ['adminStats'] })
+              }}
+              style={{
+                backgroundColor: 'rgba(255,255,255,0.2)',
+                borderRadius: 10,
+                padding: 8,
+                marginTop: 4,
+              }}
             >
-              <Text style={qa.icon}>{a.icon}</Text>
-              <Text style={qa.label}>{a.label}</Text>
+              <Text style={{ fontSize: 18 }}>🔄</Text>
             </TouchableOpacity>
-          ))}
+          </View>
         </View>
-      </View>
-    </ScrollView>
-  )
-}
+
+        <View style={layout.content}>
+          {/* Admin Stats */}
+          {adminLoading ? (
+            <ActivityIndicator
+              color={COLORS.primary}
+              style={{ marginVertical: 20 }}
+            />
+          ) : (
+            <>
+              {/* Row 1 */}
+              <View style={stats.row}>
+                <View style={[stats.box, { borderTopWidth: 3, borderTopColor: '#00d4ff' }]}>
+                  <Text style={stats.icon}>👥</Text>
+                  <Text style={[stats.value, { color: '#00d4ff' }]}>
+                    {adminStats?.totalUsers || 0}
+                  </Text>
+                  <Text style={stats.label}>Total Users</Text>
+                </View>
+                <View style={[stats.box, { borderTopWidth: 3, borderTopColor: '#06d6a0' }]}>
+                  <Text style={stats.icon}>🩸</Text>
+                  <Text style={[stats.value, { color: '#06d6a0' }]}>
+                    {adminStats?.totalDonors || 0}
+                  </Text>
+                  <Text style={stats.label}>Donors</Text>
+                </View>
+              </View>
+
+              {/* Row 2 */}
+              <View style={stats.row}>
+                <View style={[stats.box, { borderTopWidth: 3, borderTopColor: '#ffd166' }]}>
+                  <Text style={stats.icon}>🏥</Text>
+                  <Text style={[stats.value, { color: '#ffd166' }]}>
+                    {adminStats?.totalCenters || 0}
+                  </Text>
+                  <Text style={stats.label}>Centers</Text>
+                </View>
+                <View style={[stats.box, { borderTopWidth: 3, borderTopColor: '#e63946' }]}>
+                  <Text style={stats.icon}>🚨</Text>
+                  <Text style={[stats.value, { color: '#e63946' }]}>
+                    {adminStats?.activeEmergencies || 0}
+                  </Text>
+                  <Text style={stats.label}>Active SOS</Text>
+                </View>
+              </View>
+            </>
+          )}
+
+          {/* Quick Actions */}
+          <Text style={typography.sectionTitle}>QUICK ACTIONS</Text>
+          <View style={qa.grid}>
+            {[
+              {
+                icon: '🏥',
+                label: 'Add Center',
+                onPress: () => router.push('/(tabs)/admin' as any)
+              },
+              {
+                icon: '👥',
+                label: 'Manage Users',
+                onPress: () => router.push('/(tabs)/admin' as any)
+              },
+              {
+                icon: '👤',
+                label: 'My Profile',
+                onPress: () => router.push('/(tabs)/profile' as any)
+              },
+            ].map((a) => (
+              <TouchableOpacity
+                key={a.label}
+                style={qa.item}
+                onPress={a.onPress}
+              >
+                <Text style={qa.icon}>{a.icon}</Text>
+                <Text style={qa.label}>{a.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </ScrollView>
+    )
+  }
   // ── STAFF HOME ───────────────────────────────────────────────────────────────
   if (role === 'STAFF') {
     return (
@@ -182,23 +188,66 @@ if (role === 'ADMIN') {
         <View style={header.container}>
           <Text style={header.roleTag}>🏥 Hospital Staff</Text>
           <Text style={header.name}>Welcome, {user?.name}!</Text>
-          <Text style={header.subtitle}>Manage donations at your center</Text>
+          <Text style={header.subtitle}>
+            Manage donation appointments at your center
+          </Text>
         </View>
 
         <View style={layout.content}>
-          <EmergencyBanner />
+          {/* Today's Stats */}
+          <View style={stats.row}>
+            <View style={[stats.box, { borderTopWidth: 3, borderTopColor: '#f59e0b' }]}>
+              <Text style={stats.icon}>⏳</Text>
+              <Text style={[stats.value, { color: '#f59e0b' }]}>
+                {staffStats?.todayPending || 0}
+              </Text>
+              <Text style={stats.label}>Pending</Text>
+            </View>
+            <View style={[stats.box, { borderTopWidth: 3, borderTopColor: '#3b82f6' }]}>
+              <Text style={stats.icon}>✅</Text>
+              <Text style={[stats.value, { color: '#3b82f6' }]}>
+                {staffStats?.todayConfirmed || 0}
+              </Text>
+              <Text style={stats.label}>Confirmed</Text>
+            </View>
+            <View style={[stats.box, { borderTopWidth: 3, borderTopColor: '#06d6a0' }]}>
+              <Text style={stats.icon}>🏅</Text>
+              <Text style={[stats.value, { color: '#06d6a0' }]}>
+                {staffStats?.todayCompleted || 0}
+              </Text>
+              <Text style={stats.label}>Completed</Text>
+            </View>
+          </View>
 
+          {/* Quick Actions */}
           <Text style={typography.sectionTitle}>QUICK ACTIONS</Text>
           <View style={qa.grid}>
             {[
-              { icon: '🚨', label: 'Post SOS',      route: '/(tabs)/emergency' },
-              { icon: '📍', label: 'View Centers',  route: '/(tabs)/map'       },
-              { icon: '👤', label: 'My Profile',    route: '/(tabs)/profile'   },
+              {
+                icon: '📅',
+                label: "Today's Appts",
+                onPress: () => router.push('/(tabs)/staff' as any)
+              },
+              {
+                icon: '📋',
+                label: 'All Appts',
+                onPress: () => router.push('/(tabs)/staff' as any)
+              },
+              {
+                icon: '🚨',
+                label: 'Post SOS',
+                onPress: () => router.push('/(tabs)/emergency' as any)
+              },
+              {
+                icon: '👤',
+                label: 'My Profile',
+                onPress: () => router.push('/(tabs)/profile' as any)
+              },
             ].map((a) => (
               <TouchableOpacity
                 key={a.label}
                 style={qa.item}
-                onPress={() => router.push(a.route as any)}
+                onPress={a.onPress}
               >
                 <Text style={qa.icon}>{a.icon}</Text>
                 <Text style={qa.label}>{a.label}</Text>
@@ -228,8 +277,8 @@ if (role === 'ADMIN') {
           {/* Active requests count */}
           <View style={cards.base}>
             <View style={{
-              flexDirection:  'row',
-              alignItems:     'center',
+              flexDirection: 'row',
+              alignItems: 'center',
               justifyContent: 'space-between'
             }}>
               <View>
@@ -247,9 +296,9 @@ if (role === 'ADMIN') {
           <Text style={typography.sectionTitle}>QUICK ACTIONS</Text>
           <View style={qa.grid}>
             {[
-              { icon: '🆘', label: 'Post SOS',      route: '/(tabs)/emergency' },
-              { icon: '📋', label: 'My Requests',   route: '/(tabs)/emergency' },
-              { icon: '👤', label: 'My Profile',    route: '/(tabs)/profile'   },
+              { icon: '🆘', label: 'Post SOS', route: '/(tabs)/emergency' },
+              { icon: '📋', label: 'My Requests', route: '/(tabs)/emergency' },
+              { icon: '👤', label: 'My Profile', route: '/(tabs)/profile' },
             ].map((a) => (
               <TouchableOpacity
                 key={a.label}
@@ -276,11 +325,11 @@ if (role === 'ADMIN') {
         {/* Donor badges */}
         <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
           <View style={{
-            flex:            1,
+            flex: 1,
             backgroundColor: 'rgba(255,255,255,0.15)',
-            borderRadius:    10,
-            padding:         10,
-            alignItems:      'center',
+            borderRadius: 10,
+            padding: 10,
+            alignItems: 'center',
           }}>
             <Text style={{ color: '#fff', fontSize: 18, fontWeight: '800' }}>
               {user?.bloodGroup
@@ -292,11 +341,11 @@ if (role === 'ADMIN') {
             </Text>
           </View>
           <View style={{
-            flex:            1,
+            flex: 1,
             backgroundColor: 'rgba(255,255,255,0.15)',
-            borderRadius:    10,
-            padding:         10,
-            alignItems:      'center',
+            borderRadius: 10,
+            padding: 10,
+            alignItems: 'center',
           }}>
             <Text style={{ color: '#fff', fontSize: 18, fontWeight: '800' }}>
               {donorStats?.totalDonations || 0}
@@ -306,11 +355,11 @@ if (role === 'ADMIN') {
             </Text>
           </View>
           <View style={{
-            flex:            1,
+            flex: 1,
             backgroundColor: 'rgba(255,255,255,0.15)',
-            borderRadius:    10,
-            padding:         10,
-            alignItems:      'center',
+            borderRadius: 10,
+            padding: 10,
+            alignItems: 'center',
           }}>
             <Text style={{ color: '#fff', fontSize: 18, fontWeight: '800' }}>
               {donorStats?.livesSaved || 0}
@@ -328,10 +377,10 @@ if (role === 'ADMIN') {
         <Text style={typography.sectionTitle}>QUICK ACTIONS</Text>
         <View style={qa.grid}>
           {[
-            { icon: '📍', label: 'Find Centers', route: '/(tabs)/map'     },
-            { icon: '📅', label: 'Book Slot',    route: '/(tabs)/map'     },
-            { icon: '📋', label: 'My History',   route: '/(tabs)/history' },
-            { icon: '👤', label: 'My Profile',   route: '/(tabs)/profile' },
+            { icon: '📍', label: 'Find Centers', route: '/(tabs)/map' },
+            { icon: '📅', label: 'Book Slot', route: '/(tabs)/map' },
+            { icon: '📋', label: 'My History', route: '/(tabs)/history' },
+            { icon: '👤', label: 'My Profile', route: '/(tabs)/profile' },
           ].map((a) => (
             <TouchableOpacity
               key={a.label}
