@@ -9,18 +9,22 @@ import { useQuery } from '@tanstack/react-query'
 import { router } from 'expo-router'
 import { COLORS } from '../../constants/color'
 import { centersService } from '../../services/center.service'
+import { useAuthStore } from '@/store/authStore'
 
 const { width } = Dimensions.get('window')
 
 const CENTER_TYPE_ICONS: Record<string, string> = {
-  BANK:     '🏦',
+  BANK: '🏦',
   HOSPITAL: '🏥',
-  NGO:      '❤️',
-  CLINIC:   '🩺',
+  NGO: '❤️',
+  CLINIC: '🩺',
 }
 
 export default function MapScreen() {
   const mapRef = useRef<MapView>(null)
+  // Add at top inside component
+  const user = useAuthStore((s) => s.user)
+  const role = user?.role || 'DONOR'
 
   const [userLocation, setUserLocation] = useState<{
     latitude: number
@@ -32,7 +36,7 @@ export default function MapScreen() {
 
   // Get user location
   useEffect(() => {
-    ;(async () => {
+    ; (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync()
       if (status !== 'granted') {
         setLocationError(
@@ -48,7 +52,7 @@ export default function MapScreen() {
       })
 
       setUserLocation({
-        latitude:  location.coords.latitude,
+        latitude: location.coords.latitude,
         longitude: location.coords.longitude,
       })
     })()
@@ -65,7 +69,7 @@ export default function MapScreen() {
     if (userLocation && mapRef.current) {
       mapRef.current.animateToRegion({
         ...userLocation,
-        latitudeDelta:  0.05,
+        latitudeDelta: 0.05,
         longitudeDelta: 0.05,
       }, 1000)
     }
@@ -76,9 +80,9 @@ export default function MapScreen() {
     setSelectedCenter(center)
     if (mapRef.current) {
       mapRef.current.animateToRegion({
-        latitude:       center.latitude,
-        longitude:      center.longitude,
-        latitudeDelta:  0.01,
+        latitude: center.latitude,
+        longitude: center.longitude,
+        latitudeDelta: 0.01,
         longitudeDelta: 0.01,
       }, 800)
     }
@@ -111,9 +115,9 @@ export default function MapScreen() {
             provider={PROVIDER_GOOGLE}
             style={styles.map}
             initialRegion={{
-              latitude:       userLocation.latitude,
-              longitude:      userLocation.longitude,
-              latitudeDelta:  0.08,
+              latitude: userLocation.latitude,
+              longitude: userLocation.longitude,
+              latitudeDelta: 0.08,
               longitudeDelta: 0.08,
             }}
             showsUserLocation
@@ -126,7 +130,7 @@ export default function MapScreen() {
               <Marker
                 key={center.id}
                 coordinate={{
-                  latitude:  center.latitude,
+                  latitude: center.latitude,
                   longitude: center.longitude,
                 }}
                 onPress={() => focusCenter(center)}
@@ -144,7 +148,11 @@ export default function MapScreen() {
                 {/* Callout popup on marker tap */}
                 <Callout
                   tooltip
-                  onPress={() => router.push(`/center/${center.id}` as any)}
+                  onPress={() => {
+                    if (role === 'DONOR') {
+                      router.push(`/center/${center.id}` as any)
+                    }
+                  }}
                 >
                   <View style={styles.callout}>
                     <Text style={styles.calloutTitle}>{center.name}</Text>
@@ -159,8 +167,7 @@ export default function MapScreen() {
                     </Text>
                     <View style={styles.calloutButton}>
                       <Text style={styles.calloutButtonText}>
-                        Tap to Book →
-                      </Text>
+                        {role === 'DONOR' ? 'Tap to Book →' : 'View Details →'}                      </Text>
                     </View>
                   </View>
                 </Callout>
@@ -229,14 +236,19 @@ export default function MapScreen() {
                   ✅ {center.slots}
                 </Text>
               </View>
-              <TouchableOpacity
-                style={styles.bookBtn}
-                onPress={() =>
-                  router.push(`/center/${center.id}` as any)
-                }
-              >
-                <Text style={styles.bookBtnText}>Book</Text>
-              </TouchableOpacity>
+              {/* Only donors can book */}
+              {role === 'DONOR' ? (
+                <TouchableOpacity
+                  style={styles.bookBtn}
+                  onPress={() => router.push(`/center/${center.id}` as any)}
+                >
+                  <Text style={styles.bookBtnText}>Book</Text>
+                </TouchableOpacity>
+              ) : (
+                <View style={styles.viewBtn}>
+                  <Text style={styles.viewBtnText}>View</Text>
+                </View>
+              )}
             </View>
           </TouchableOpacity>
         ))}
@@ -469,6 +481,17 @@ const styles = StyleSheet.create({
   },
   bookBtnText: {
     color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  viewBtn: {
+    backgroundColor: '#f0f0f0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  viewBtnText: {
+    color: COLORS.textMuted,
     fontSize: 12,
     fontWeight: '700',
   },
